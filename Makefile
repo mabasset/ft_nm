@@ -4,9 +4,9 @@ S_DIR =	src/
 O_DIR =	obj/
 
 SRC =	main.c \
-		utils.c \
-		elf64.c \
-		elf32.c \
+		process_elf.c \
+		sections_parser.c \
+		symbols_parser.c \
 
 OBJ =	$(addprefix $(O_DIR),$(SRC:.c=.o))
 

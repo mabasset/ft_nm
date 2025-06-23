@@ -1,26 +1,28 @@
 #include "ft_nm.h"
 
-t_elf_info g_elf = {NULL, 0, ELFCLASSNONE, ELFDATANONE};
+t_elf_info g_elf = {NULL, NULL, 0, ELFCLASSNONE, ELFDATANONE};
 
-static int (*elf_processors[])() = {
-    NULL,
-    process_elf32,
-    process_elf64
-};
+int print_error() {
+    write(STDERR_FILENO, "nm: '", 5);
+    write(STDERR_FILENO, g_elf.path, strlen(g_elf.path));
+    write(STDERR_FILENO, "': ", 3);
+    perror("");
+    return 1;
+}
 
-int check_content(char *content) {
+int check_content() {
     if (g_elf.size < sizeof(Elf32_Ehdr) ||
-        content[0] != 0x7f || content[1] != 'E' ||
-        content[2] != 'L' || content[3] != 'F') {
+        g_elf.content[0] != 0x7f || g_elf.content[1] != 'E' ||
+        g_elf.content[2] != 'L' || g_elf.content[3] != 'F') {
         return 1;
     }
-    if(content[EI_CLASS] != ELFCLASS32 && content[EI_CLASS] != ELFCLASS64)
+    if(g_elf.content[EI_CLASS] != ELFCLASS32 && g_elf.content[EI_CLASS] != ELFCLASS64)
         return 1;
-    if (content[EI_CLASS] == ELFCLASS64 && g_elf.size < sizeof(Elf64_Ehdr))
+    if (g_elf.content[EI_CLASS] == ELFCLASS64 && g_elf.size < sizeof(Elf64_Ehdr))
         return 1;
-    if (content[EI_DATA] != ELFDATA2LSB && content[EI_DATA] != ELFDATA2MSB)
+    if (g_elf.content[EI_DATA] != ELFDATA2LSB && g_elf.content[EI_DATA] != ELFDATA2MSB)
         return 1;
-    if (content[EI_VERSION] != EV_CURRENT)
+    if (g_elf.content[EI_VERSION] != EV_CURRENT)
         return 1;
     return 0;
 }
@@ -29,32 +31,30 @@ int ft_nm(char *file_path) {
     struct stat file_info;
     int         fd;
     void        *map;
-    char        *content;
 
     g_elf.path = file_path;
     fd = open(file_path, O_RDONLY);
     if (fd == -1)
-        return print_error(strerror(errno));
-    if (stat(file_path, &file_info) < 0)
-        return print_error(strerror(errno));
+        return print_error();
+    if (fstat(fd, &file_info) < 0)
+        return print_error();
     if (S_ISDIR(file_info.st_mode))
         return print_error("is a directory");
     g_elf.size = file_info.st_size;
     map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);
     if (map == MAP_FAILED)
-        return print_error(strerror(errno));
-    content = (char *) map;
-    if (check_content(content)) {
+        return print_error();
+
+    g_elf.content = (char *) map;
+    if (check_content()) {
         print_error("file format not recognized");
         munmap(map, file_info.st_size);
         return 1;
     }
-
-    g_elf.content = content;
     g_elf.class = g_elf.content[EI_CLASS];
     g_elf.endian = g_elf.content[EI_DATA];
-    elf_processors[g_elf.class]();
+    process_elf64();
 
     munmap(map, file_info.st_size);
     return 0;
