@@ -15,11 +15,11 @@ HDR =	src/ft_nm.h
 FLG =	-Wall -Wextra -Werror
 
 $(NAME): $(OBJ) $(HDR)
-	gcc -o $@ $^
+	gcc -o $@ $^ $(FLG)
 
 $(O_DIR)%.o: $(S_DIR)%.c
 	@mkdir -p $(O_DIR)
-	gcc -c $^ -o $@ $(FLG)
+	gcc -c $^ -o $@
 
 all: $(NAME)
 

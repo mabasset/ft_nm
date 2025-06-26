@@ -2,11 +2,12 @@
 
 t_elf_info g_elf = {NULL, NULL, 0, ELFCLASSNONE, ELFDATANONE};
 
-int print_error() {
-    write(STDERR_FILENO, "nm: '", 5);
+int print_error(char *error_msg) {
+    write(STDERR_FILENO, "ft_nm: ", 7);
     write(STDERR_FILENO, g_elf.path, strlen(g_elf.path));
-    write(STDERR_FILENO, "': ", 3);
-    perror("");
+    write(STDERR_FILENO, ": ", 2);
+    write(STDERR_FILENO, error_msg, strlen(error_msg));
+    write(STDERR_FILENO, "\n", 1);
     return 1;
 }
 
@@ -35,16 +36,16 @@ int ft_nm(char *file_path) {
     g_elf.path = file_path;
     fd = open(file_path, O_RDONLY);
     if (fd == -1)
-        return print_error();
+        return print_error("No such file");
     if (fstat(fd, &file_info) < 0)
-        return print_error();
+        return print_error(strerror(errno));
     if (S_ISDIR(file_info.st_mode))
         return print_error("is a directory");
     g_elf.size = file_info.st_size;
     map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);
     if (map == MAP_FAILED)
-        return print_error();
+        return print_error(strerror(errno));
 
     g_elf.content = (char *) map;
     if (check_content()) {
