@@ -1,6 +1,8 @@
 #include "ft_nm.h"
 
-extern t_elf_file g_elf_file;
+extern t_elf_file   g_elf_file;
+extern t_flags      g_flags;
+extern bool         is_multiple_files;
 
 size_t    ft_strlen(char *str) {
     size_t i;
@@ -11,12 +13,29 @@ size_t    ft_strlen(char *str) {
     return i;
 }
 
+char *ft_strchr(const char *str, int c) {
+    int  size;
+
+    size = ft_strlen(str);
+    if(c == '\0')
+        return &str[size];
+    for(int i = 0; i < size; i++) {
+        if (str[i] == c)
+            return &str[i];
+    }
+    return NULL;
+}
+
 void    print_str_fd(int fd, char *str) {
     size_t  size;
 
     size = ft_strlen(str);
     write(fd, str, size);
     write(fd, "\n", 1);
+}
+
+void    print_str(char *str) {
+    print_str_fd(1, str);
 }
 
 void    print_usage() {
@@ -114,10 +133,12 @@ int ft_strcmp(char *s1, char *s2) {
 
 void    sort_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
     t_sym_info  temp;
+    int         diff;
 
     for (size_t i = 0; i < n_sym - 1; i++) {
         for (size_t j = 0; j < n_sym - i - 1; j++) {
-            if (ft_strcmp(sym_info_arr[j].name, sym_info_arr[j + 1].name) > 0) {
+            diff = ft_strcmp(sym_info_arr[j].name, sym_info_arr[j + 1].name);
+            if ((diff > 0 && !g_flags.reverse) || (diff < 0 && g_flags.reverse)) {
                 temp = sym_info_arr[j];
                 sym_info_arr[j] = sym_info_arr[j + 1];
                 sym_info_arr[j + 1] = temp;
@@ -127,13 +148,29 @@ void    sort_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
 }
 
 void    display_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
+    static char *excluded_types = "ANap-?";
+    static char *external_types = "ABCDGRSTUVWuvw";
+    static char *undefind_types = "UVWvw";
     t_sym_info  sym_info;
+    char        type;
 
+    if (is_multiple_files == true) {
+        write(1, "\n", 1);
+        write(1, g_elf_file.path, ft_strlen(g_elf_file.path));
+        write(1, ":\n", 2);
+    }
     for (size_t i = 0; i < n_sym; i++) {
         sym_info = sym_info_arr[i];
+        type = sym_info.type;
+        if (g_flags.undefined && ft_strchr(undefind_types, type) == NULL)
+            continue ;
+        if (g_flags.external && ft_strchr(external_types, type) == NULL)
+            continue ;
+        if (!g_flags.all && ft_strchr(excluded_types, type) != NULL)
+            continue ;
         write(STDOUT_FILENO, sym_info.value, ft_strlen(sym_info.value));
         write(STDOUT_FILENO, " ", 1);
-        write(STDOUT_FILENO, &sym_info.type, 1);
+        write(STDOUT_FILENO, &type, 1);
         write(STDOUT_FILENO, " ", 1);
         write(STDOUT_FILENO, sym_info.name, ft_strlen(sym_info.name));
         write(STDOUT_FILENO, "\n", 1);

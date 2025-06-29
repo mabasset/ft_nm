@@ -11,6 +11,7 @@
 # include <sys/mman.h>
 # include <unistd.h>
 # include <stdlib.h>
+# include <stdbool.h>
 
 # ifdef X32
 #  define Elf_Ehdr      Elf32_Ehdr
@@ -38,11 +39,11 @@ typedef struct {
 } t_elf_file;
 
 typedef struct {
-    int     all;
-    int     external;
-    int     undefined;
-    int     reverse;
-    int     no_sort;
+    bool     all;
+    bool     external;
+    bool     undefined;
+    bool     reverse;
+    bool     no_sort;
 } t_flags;
 
 

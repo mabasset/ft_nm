@@ -1,7 +1,8 @@
 #include "ft_nm.h"
 
-t_elf_file g_elf_file = { 0 };
-t_flags g_flags = { 0 };
+t_elf_file  g_elf_file = { 0 };
+t_flags     g_flags = { 0 };
+int         is_multiple_files = false;
 
 int check_content(char *content) {
     if (g_elf_file.size < sizeof(Elf32_Ehdr) ||
@@ -34,12 +35,14 @@ int ft_nm(char *file_path) {
         close(fd);
         return print_error(strerror(errno));
     }
-    if (S_ISDIR(file_info.st_mode))
+    if (S_ISDIR(file_info.st_mode)) {
+        close(fd);
         return print_error("is a directory");
+    }
     map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);
     if (map == NULL || map == MAP_FAILED)
-        return print_error("can't be mapped");
+        return print_error(strerror(errno));
     g_elf_file.size = file_info.st_size;
     content = (char *) map;
     if (check_content(content)) {
@@ -62,19 +65,19 @@ int     set_flags(char *flags) {
     for (int i = 1; flags[i] != '\0'; i++) {
         switch(flags[i]) {
             case 'a':
-                g_flags.all = 1;
+                g_flags.all = true;
                 break;
             case 'g':
-                g_flags.external = 1;
+                g_flags.external = true;
                 break;
             case 'u':
-                g_flags.undefined = 1;
+                g_flags.undefined = true;
                 break;
             case 'r':
-                g_flags.reverse = 1;
+                g_flags.reverse = true;
                 break;
             case 'p':
-                g_flags.no_sort = 1;
+                g_flags.no_sort = true;
                 break;
             default:
                 error[19] = flags[i];
@@ -119,7 +122,8 @@ int main(int argc, char *argv[]) {
     file_paths = process_arguments(argc, argv);
     if (file_paths == NULL)
         return 1;
-    print_matrix(file_paths);
+    if (file_paths[1] != NULL)
+        is_multiple_files = true;
     for (int i = 0; file_paths[i] != NULL; i++)
         exit_status = ft_nm(file_paths[i]) || exit_status;
     

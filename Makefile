@@ -52,7 +52,7 @@ $(O_DIR_64)/%.o: $(S_DIR)/%.c $(HDRS)
 	@mkdir -p $(O_DIR_64)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Rule for 32-bit objects (compiles with -D X32 and -m32)
+# Rule for 32-bit objects (compiles with -D X32)
 $(O_DIR_32)/%.o: $(S_DIR)/%.c $(HDRS)
 	@mkdir -p $(O_DIR_32)
 	$(CC) $(CFLAGS) -D X32 -c $< -o $@

@@ -2,15 +2,17 @@
 
 extern t_elf_file g_elf_file;
 
-char    *x_(get_value)(Elf_Sym symbol) {
-    char        *str;
-    const char  *hex_digits = "0123456789abcdef";
+char *x_(get_value)(Elf_Sym symbol) {
+    char *str;
+    const char *hex_digits = "0123456789abcdef";
 
     str = malloc(Elf_Addr_len + 1);
     if (!str)
         return NULL;
-    for (int i = Elf_Addr_len - 1; i >= 0; i--) {
-        if (symbol.st_shndx == SHN_UNDEF) {
+    for (int i = Elf_Addr_len - 1; i >= 0; i--)
+    {
+        if (symbol.st_shndx == SHN_UNDEF)
+        {
             str[i] = ' ';
             continue;
         }
@@ -23,56 +25,63 @@ char    *x_(get_value)(Elf_Sym symbol) {
 }
 
 char x_(get_type)(Elf_Sym symbol, Elf_Shdr *sh_arr) {
-    unsigned char   bind, type;
-    Elf64_Word      sh_flags, sh_type;
-    char            c = '?';
+    char c = '?';
+    uint64_t flags;
+    uint64_t bind = ELF64_ST_BIND(symbol.st_info);
+    uint64_t type = ELF64_ST_TYPE(symbol.st_info);
+    uint16_t shndx = read_uint16(symbol.st_shndx, file_data);
 
-    bind = ELF_ST_BIND(symbol.st_info);
-    type = ELF_ST_TYPE(symbol.st_info);
+    uint64_t shnum = read_uint16(elf_header->e_shnum, file_data);
 
-    if (type == STT_SECTION || type == STT_FILE)
-        return '\0';
-    // if (type == STT_FILE)
-    //     c = 'f';
-    // else if (type == STT_SECTION)
-    //     c = 's';
-    if (symbol.st_shndx == SHN_UNDEF)
-        c = (bind == STB_WEAK) ? 'w' : 'U';
-    else if (symbol.st_shndx == SHN_ABS)
-        c = 'A';
-    else if (symbol.st_shndx == SHN_COMMON)
-        c = 'C';
-    else if (sh_arr && symbol.st_shndx < SHN_LORESERVE) {
-        sh_flags = sh_arr[symbol.st_shndx].sh_flags;
-        sh_type = sh_arr[symbol.st_shndx].sh_type;
-
-        if (type == STT_FUNC || (type == STT_NOTYPE && sh_flags & SHF_EXECINSTR))
-            c = 'T';
-        else if (sh_type == SHT_NOBITS)
-            c = 'B';
-        else if (sh_flags & SHF_WRITE)
-            c = 'D';
+    if (bind == STB_GNU_UNIQUE)
+        return 'u';
+    if (type == STT_GNU_IFUNC)
+        return 'i';
+    if (bind == STB_WEAK) {
+        if (type == STT_OBJECT)
+            return (shndx == SHN_UNDEF) ? 'v' : 'V';
         else
-            c = 'R';
+            return (shndx == SHN_UNDEF) ? 'w' : 'W';
     }
+    if (symbol.st_shndx == SHN_UNDEF)
+        return 'U';
+    if (symbol.st_shndx == SHN_ABS)
+        return 'a';
+    if (symbol.st_shndx == SHN_COMMON)
+        return 'C';
+    else if (shndx < shnum)
+    {
+        type = read_uint64(shdr[shndx].sh_type, file_data);
+        flags = read_uint64(shdr[shndx].sh_flags, file_data);
 
-    if (bind == STB_WEAK && symbol.st_shndx != SHN_UNDEF)
-        c = (c == 'T') ? 'V' : 'W';
-    else if (bind == STB_LOCAL && c != 'U' && c != 'w')
-        c += ('a' - 'A');
-
+        if (type == SHT_NOBITS)
+            c = 'B';
+        else if (!(flags & SHF_WRITE))
+        {
+            if (flags & SHF_ALLOC && flags & SHF_EXECINSTR)
+                c = 'T';
+            else
+                c = 'R';
+        }
+        else if (flags & SHF_EXECINSTR)
+            c = 'T';
+        else
+            c = 'D';
+    }
+    if (bind == STB_LOCAL && c != '?')
+        c += 32;
     return c;
 }
 
-char    *x_(get_name)(Elf_Sym symbol, char *names) {
-    char    *name = NULL;
+char *x_(get_name)(Elf_Sym symbol, char *names) {
+    char *name = NULL;
 
     if (symbol.st_name != 0)
         name = names + symbol.st_name;
     return name;
 }
 
-t_sym_info  *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *strtab, Elf_Shdr *sh_arr) {
+t_sym_info *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *strtab, Elf_Shdr *sh_arr) {
     char        *names;
     t_sym_info  *sym_info_arr;
     size_t      j;
@@ -87,7 +96,7 @@ t_sym_info  *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *str
         t_sym_info sym_info;
         sym_info.type = x_(get_type)(sym_arr[i], sh_arr);
         sym_info.name = x_(get_name)(sym_arr[i], names);
-        if (sym_info.type == '\0' || !sym_info.name || sym_info.name[0] == '\0')
+        if (!sym_info.name || sym_info.name[0] == '\0')
             continue;
         sym_info.value = x_(get_value)(sym_arr[i]);
         sym_info_arr[j++] = sym_info;
