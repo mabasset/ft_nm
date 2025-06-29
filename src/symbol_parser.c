@@ -5,12 +5,11 @@ extern t_elf_file g_elf_file;
 char    *x_(get_value)(Elf_Sym symbol) {
     char        *str;
     const char  *hex_digits = "0123456789abcdef";
-    //Elf_Word    word;
 
-    str = malloc(17);
+    str = malloc(Elf_Addr_len + 1);
     if (!str)
         return NULL;
-    for (int i = 15; i >= 0; i--) {
+    for (int i = Elf_Addr_len - 1; i >= 0; i--) {
         if (symbol.st_shndx == SHN_UNDEF) {
             str[i] = ' ';
             continue;
@@ -18,7 +17,7 @@ char    *x_(get_value)(Elf_Sym symbol) {
         str[i] = hex_digits[symbol.st_value & 0xF];
         symbol.st_value >>= 4;
     }
-    str[16] = '\0';
+    str[Elf_Addr_len] = '\0';
 
     return str;
 }
@@ -86,11 +85,11 @@ t_sym_info  *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *str
     j = 0;
     for (size_t i = 1; i < *n_sym; i++) {
         t_sym_info sym_info;
-        sym_info.value = x_(get_value)(sym_arr[i]);
         sym_info.type = x_(get_type)(sym_arr[i], sh_arr);
         sym_info.name = x_(get_name)(sym_arr[i], names);
         if (sym_info.type == '\0' || !sym_info.name || sym_info.name[0] == '\0')
             continue;
+        sym_info.value = x_(get_value)(sym_arr[i]);
         sym_info_arr[j++] = sym_info;
     }
     *n_sym = j;

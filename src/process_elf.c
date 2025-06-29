@@ -29,6 +29,6 @@ int    x_(process_elf)() {
         return 1;
     sort_symbols(sym_info_arr, n_sym);
     display_symbols(sym_info_arr, n_sym);
-    free(sym_info_arr);
+    free_symbols(sym_info_arr, n_sym);
     return 0;
 }

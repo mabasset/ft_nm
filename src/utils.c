@@ -69,6 +69,24 @@ void    print_usage() {
     print_str_fd(2, "nm: supported targets: elf64-x86-64 elf32-i386 elf32-iamcu elf32-x86-64 pei-i386 pe-x86-64 pei-x86-64 elf64-little elf64-big elf32-little elf32-big pe-bigobj-x86-64 pe-i386 pdb srec symbolsrec verilog tekhex binary ihex plugin");
 }
 
+void    print_matrix_fd(int fd, char **matrix) {
+    size_t  size;
+
+    write(fd, "[", 1);
+    while (*matrix != NULL) {
+        size = ft_strlen(*matrix);
+        write(fd, *matrix, size);
+        matrix++;
+        if (*matrix != NULL)
+            write(fd, ", ", 2);
+    }
+    write(fd, "]\n", 2);
+}
+
+void    print_matrix(char **matrix) {
+    print_matrix_fd(1, matrix);
+}
+
 int print_error(char *error) {
     write(2, "nm: ", 4);
     if (g_elf_file.path != NULL) {
@@ -122,20 +140,8 @@ void    display_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
     }
 }
 
-void    print_matrix_fd(int fd, char **matrix) {
-    size_t  size;
-
-    write(fd, "[", 1);
-    while (*matrix != NULL) {
-        size = ft_strlen(*matrix);
-        write(fd, *matrix, size);
-        matrix++;
-        if (*matrix != NULL)
-            write(fd, ", ", 2);
-    }
-    write(fd, "]\n", 2);
-}
-
-void    print_matrix(char **matrix) {
-    print_matrix_fd(1, matrix);
+void    free_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
+    for (size_t i = 0; i < n_sym; i++)
+        free(sym_info_arr[i].value);
+    free(sym_info_arr);
 }

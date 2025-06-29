@@ -10,8 +10,8 @@
 			"GID": "1000"
 		}
 	},
-	"workspaceFolder": "/home/arbutnar/ft_nm",
 	"workspaceMount": "source=${localWorkspaceFolder},target=/home/arbutnar/ft_nm,type=bind",
+	"workspaceFolder": "/home/arbutnar/ft_nm",
 	"customizations": {
 		"vscode": {
 			"extensions": ["ms-vscode.cpptools"]

@@ -21,11 +21,10 @@ int check_content(char *content) {
 }
 
 int ft_nm(char *file_path) {
-    int         fd;
+    int         fd, ret;
     struct stat file_info;
     void        *map;
     char        *content;
-    int         ret;
 
     g_elf_file.path = file_path;
     fd = open(file_path, O_RDONLY);
@@ -88,14 +87,13 @@ int     set_flags(char *flags) {
 
 char    **process_arguments(int argc, char *argv[]) {
     char    **file_paths;
-    int     k;
+    int     k = 0;
 
     file_paths = malloc(sizeof(char *) * (argc + 1));
     if (file_paths == NULL) {
         print_error(strerror(errno));
         return NULL;
     }
-    k = 0;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] != '\0') {
             if (set_flags(argv[i])) {
