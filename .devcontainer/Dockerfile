@@ -6,8 +6,11 @@ ARG GID=1000
 
 RUN apt-get update && apt-get upgrade -y && \
     apt-get install -y build-essential \
+        gcc-multilib \
         valgrind \
-        git
+        sudo \
+        git \
+        vim
 
 RUN groupadd -g ${GID} ${USER} && \
     useradd -m -s /bin/bash -u ${UID} -g ${GID} ${USER} && \

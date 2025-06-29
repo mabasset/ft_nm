@@ -11,5 +11,10 @@
 		}
 	},
 	"workspaceFolder": "/home/arbutnar/ft_nm",
-	"workspaceMount": "source=${localWorkspaceFolder},target=/home/arbutnar/ft_nm,type=bind"
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/arbutnar/ft_nm,type=bind",
+	"customizations": {
+		"vscode": {
+			"extensions": ["ms-vscode.cpptools"]
+		}
+	}
 }
