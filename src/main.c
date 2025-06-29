@@ -48,10 +48,8 @@ int ft_nm(char *file_path) {
     }
     g_elf_file.content = content;
     g_elf_file.endian = content[EI_DATA];
-    if (content[EI_CLASS] == ELFCLASS32)
-        ret = x32_process_elf();
-    else
-        ret = x64_process_elf();
+    ret = (content[EI_CLASS] == ELFCLASS32) ? x32_process_elf() : x64_process_elf();
+
     munmap(map, g_elf_file.size);
     return ret;
 }

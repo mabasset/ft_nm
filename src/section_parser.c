@@ -4,14 +4,21 @@ extern t_elf_file g_elf_file;
 
 Elf_Shdr  *x_(get_section_headers)(Elf_Ehdr *header) {
     size_t      sh_arr_size;
+    Elf_Off     shoff;
+    Elf_Half    shnum;
+    Elf_Half    shentsize;
 
-    if (header->e_shoff == 0 || header->e_shoff >= g_elf_file.size)
+    shoff = swap_endian_if_needed(header->e_shoff);
+    shnum = swap_endian_if_needed(header->e_shnum);
+    shentsize = swap_endian_if_needed(header->e_shentsize);
+
+    if (shoff == 0 || shoff >= g_elf_file.size)
         return NULL;
-    sh_arr_size = header->e_shnum * header->e_shentsize;
-    if (header->e_shoff + sh_arr_size > g_elf_file.size)
+    sh_arr_size = shnum * shentsize;
+    if (shoff + sh_arr_size > g_elf_file.size)
         return NULL;
 
-    return (Elf_Shdr *) (g_elf_file.content + header->e_shoff);
+    return (Elf_Shdr *) (g_elf_file.content + shoff);
 }
 
 Elf_Shdr  *x_(get_symtab_section)(Elf_Shdr *sections, size_t num_sections) {

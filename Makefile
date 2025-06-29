@@ -11,6 +11,7 @@ O_DIR_32 = $(O_DIR)/32
 # List all your .c files here
 SRCS_LIST = main.c \
 			utils.c \
+			print.c \
 			process_elf.c \
 			section_parser.c \
 			symbol_parser.c
@@ -19,8 +20,8 @@ SRCS_LIST = main.c \
 SRCS = $(addprefix $(S_DIR)/,$(SRCS_LIST))
 
 # Separate main.c and utils.c from the generic sources
-NON_GENERIC_SRCS = $(filter %/main.c %/utils.c, $(SRCS))
-GENERIC_SRCS = $(filter-out %/main.c %/utils.c, $(SRCS))
+NON_GENERIC_SRCS = $(filter %/main.c %/utils.c %/print.c, $(SRCS))
+GENERIC_SRCS = $(filter-out %/main.c %/utils.c %/print.c, $(SRCS))
 
 # Object files
 OBJS_NON_GENERIC = $(patsubst $(S_DIR)/%.c, $(O_DIR)/%.o, $(NON_GENERIC_SRCS))

@@ -24,7 +24,7 @@ char    *x_(get_value)(Elf_Sym symbol) {
 
 char x_(get_type)(Elf_Sym symbol, Elf_Shdr *sh_arr) {
     unsigned char   bind, type;
-    Elf64_Word      sh_flags, sh_type;
+    Elf64_Xword     sh_flags, sh_type;
     char            c = '?';
 
     bind = ELF_ST_BIND(symbol.st_info);
