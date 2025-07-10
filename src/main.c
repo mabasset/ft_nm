@@ -34,12 +34,10 @@ int ft_nm(char *file_path) {
         close(fd);
         return print_error(strerror(errno));
     }
-    if (S_ISDIR(file_info.st_mode))
-        return print_error("is a directory");
     map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);
     if (map == NULL || map == MAP_FAILED)
-        return print_error("can't be mapped");
+        return print_error(strerror(errno));
     g_elf_file.size = file_info.st_size;
     content = (char *) map;
     if (check_content(content)) {
@@ -49,7 +47,6 @@ int ft_nm(char *file_path) {
     g_elf_file.content = content;
     g_elf_file.endian = content[EI_DATA];
     ret = (content[EI_CLASS] == ELFCLASS32) ? x32_process_elf() : x64_process_elf();
-
     munmap(map, g_elf_file.size);
     return ret;
 }
@@ -107,6 +104,8 @@ char    **process_arguments(int argc, char *argv[]) {
     if (k == 0)
         file_paths[k++] = "a.out";
     file_paths[k] = NULL;
+    if (k > 1)
+        g_flags.path = 1;
     return file_paths;
 }
 
@@ -117,10 +116,8 @@ int main(int argc, char *argv[]) {
     file_paths = process_arguments(argc, argv);
     if (file_paths == NULL)
         return 1;
-    print_matrix(file_paths);
     for (int i = 0; file_paths[i] != NULL; i++)
         exit_status = ft_nm(file_paths[i]) || exit_status;
-    
     free(file_paths);
     return exit_status;
 }

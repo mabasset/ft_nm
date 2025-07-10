@@ -1,6 +1,7 @@
 #include "ft_nm.h"
 
-extern t_elf_file g_elf_file;
+extern t_elf_file   g_elf_file;
+extern t_flags      g_flags;
 
 int    x_(process_elf)() {
     Elf_Ehdr    *header;
@@ -27,7 +28,8 @@ int    x_(process_elf)() {
     sym_info_arr = x_(get_symbols_info)(sym_arr, &n_sym, strtab, sh_arr);
     if (!sym_info_arr)
         return 1;
-    sort_symbols(sym_info_arr, n_sym);
+    if (!g_flags.no_sort)
+        sort_symbols(sym_info_arr, n_sym);
     display_symbols(sym_info_arr, n_sym);
     free_symbols(sym_info_arr, n_sym);
     return 0;

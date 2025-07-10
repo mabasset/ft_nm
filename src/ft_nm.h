@@ -55,6 +55,7 @@ typedef struct {
     int     undefined;
     int     reverse;
     int     no_sort;
+    int     path;
 } t_flags;
 
 typedef struct {
