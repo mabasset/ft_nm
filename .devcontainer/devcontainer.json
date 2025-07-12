@@ -14,7 +14,7 @@
 	"workspaceFolder": "/home/arbutnar/ft_nm",
 	"customizations": {
 		"vscode": {
-			"extensions": ["ms-vscode.cpptools"]
+			"extensions": ["ms-vscode.cpptools-extension-pack"]
 		}
 	}
 }
