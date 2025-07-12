@@ -1,6 +1,6 @@
 FROM debian:bookworm
 
-ARG USER=student
+ARG NAME=student
 ARG UID=1000
 ARG GID=1000
 
@@ -12,16 +12,16 @@ RUN apt-get update && apt-get upgrade -y && \
         git \
         vim
 
-RUN groupadd -g ${GID} ${USER} && \
-    useradd -m -s /bin/bash -u ${UID} -g ${GID} ${USER} && \
-    usermod -aG sudo ${USER}
+RUN groupadd -g ${GID} ${NAME} && \
+    useradd -m -s /bin/bash -u ${UID} -g ${GID} ${NAME} && \
+    usermod -aG sudo ${NAME} && \
+    echo "${NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-RUN     mkdir /home/${USER}/
+USER    ${NAME}
+WORKDIR /home/${NAME}/ft_nm
 
-COPY    ft_nm /usr/bin/ft_nm
-RUN     chmod 777 /usr/bin/ft_nm
-
-WORKDIR /home/${USER}/ft_nm
-USER    ${USER}
+COPY src ./src
+COPY test ./test
+COPY Makefile .
 
 CMD ["sleep", "infinity"]
