@@ -5,30 +5,34 @@ extern t_elf_file g_elf_file;
 char    *x_(get_value)(Elf_Sym symbol) {
     char        *str;
     const char  *hex_digits = "0123456789abcdef";
+    Elf_Addr    st_value;
 
     str = malloc(Elf_Addr_len + 1);
     if (!str)
         return NULL;
+    st_value = resolve_endianess(symbol.st_value);
+
     for (int i = Elf_Addr_len - 1; i >= 0; i--) {
-        if (symbol.st_shndx == SHN_UNDEF) {
+        if (resolve_endianess(symbol.st_shndx) == SHN_UNDEF) {
             str[i] = ' ';
             continue;
         }
-        str[i] = hex_digits[symbol.st_value & 0xF];
-        symbol.st_value >>= 4;
+        str[i] = hex_digits[st_value & 0xF];
+        st_value >>= 4;
     }
     str[Elf_Addr_len] = '\0';
-
     return str;
 }
 
 char x_(get_type)(Elf_Sym symbol, Elf_Shdr *sh_arr) {
     unsigned char   bind, type;
+    uint16_t        st_shndx;
     Elf64_Xword     sh_flags, sh_type;
     char            c = '?';
 
     bind = ELF_ST_BIND(symbol.st_info);
     type = ELF_ST_TYPE(symbol.st_info);
+    st_shndx = resolve_endianess(symbol.st_shndx);
 
     if (type == STT_SECTION || type == STT_FILE)
         return '\0';
@@ -36,15 +40,15 @@ char x_(get_type)(Elf_Sym symbol, Elf_Shdr *sh_arr) {
     //     c = 'f';
     // else if (type == STT_SECTION)
     //     c = 's';
-    if (symbol.st_shndx == SHN_UNDEF)
+    if (st_shndx == SHN_UNDEF)
         c = (bind == STB_WEAK) ? 'w' : 'U';
-    else if (symbol.st_shndx == SHN_ABS)
+    else if (st_shndx == SHN_ABS)
         c = 'A';
-    else if (symbol.st_shndx == SHN_COMMON)
+    else if (st_shndx == SHN_COMMON)
         c = 'C';
-    else if (sh_arr && symbol.st_shndx < SHN_LORESERVE) {
-        sh_flags = sh_arr[symbol.st_shndx].sh_flags;
-        sh_type = sh_arr[symbol.st_shndx].sh_type;
+    else if (sh_arr && st_shndx < SHN_LORESERVE) {
+        sh_flags = resolve_endianess(sh_arr[st_shndx].sh_flags);
+        sh_type = resolve_endianess(sh_arr[st_shndx].sh_type);
 
         if (type == STT_FUNC || (type == STT_NOTYPE && sh_flags & SHF_EXECINSTR))
             c = 'T';
@@ -56,20 +60,20 @@ char x_(get_type)(Elf_Sym symbol, Elf_Shdr *sh_arr) {
             c = 'R';
     }
 
-    if (bind == STB_WEAK && symbol.st_shndx != SHN_UNDEF)
+    if (bind == STB_WEAK && st_shndx != SHN_UNDEF)
         c = (c == 'T') ? 'V' : 'W';
     else if (bind == STB_LOCAL && c != 'U' && c != 'w')
         c += ('a' - 'A');
-
     return c;
 }
 
 char    *x_(get_name)(Elf_Sym symbol, char *names) {
-    char    *name = NULL;
+    uint32_t    st_name;
 
-    if (symbol.st_name != 0)
-        name = names + symbol.st_name;
-    return name;
+    st_name = resolve_endianess(symbol.st_name);
+    if (st_name == 0)
+        return NULL;
+    return names + st_name;
 }
 
 t_sym_info  *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *strtab, Elf_Shdr *sh_arr) {
@@ -77,7 +81,7 @@ t_sym_info  *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *str
     t_sym_info  *sym_info_arr;
     size_t      j;
 
-    names = g_elf_file.content + strtab->sh_offset;
+    names = g_elf_file.content + resolve_endianess(strtab->sh_offset);
     sym_info_arr = malloc(sizeof(t_sym_info) * (*n_sym));
     if (!sym_info_arr)
         return NULL;

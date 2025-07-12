@@ -20,6 +20,14 @@ int check_content(char *content) {
     return 0;
 }
 
+int define_endianess(int file_endianess) {
+    int i, local_endianess;
+
+    i = 1;
+    local_endianess = (*(char *)&i == 1) ? ELFDATA2LSB : ELFDATA2MSB;
+    return (local_endianess == file_endianess) ? 1 : 0;
+}
+
 int ft_nm(char *file_path) {
     int         fd, ret;
     struct stat file_info;
@@ -45,8 +53,9 @@ int ft_nm(char *file_path) {
         return print_error("file format not recognized");
     }
     g_elf_file.content = content;
-    g_elf_file.endian = content[EI_DATA];
+    g_elf_file.endian_match = define_endianess(content[EI_DATA]);
     ret = (content[EI_CLASS] == ELFCLASS32) ? x32_process_elf() : x64_process_elf();
+
     munmap(map, g_elf_file.size);
     return ret;
 }

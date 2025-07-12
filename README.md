@@ -166,3 +166,12 @@ Elf_Shdr *strtab = &sh_arr[symtab->sh_link];
 char *names = file_content + strtab->sh_offset;
 char *sym_name = names + *symbol*.st_name;
 ```
+</details>
+
+## Bonus
+Manage following options:
+- -a
+- -g
+- -u
+- -r
+- -p

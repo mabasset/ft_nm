@@ -16,15 +16,15 @@ int    x_(process_elf)() {
     sh_arr = x_(get_section_headers)(header);
     if (!sh_arr)
         return 1;
-    symtab = x_(get_symtab_section)(sh_arr, header->e_shnum);
+    symtab = x_(get_symtab_section)(sh_arr, resolve_endianess(header->e_shnum));
     if (!symtab)
         return 0;
-    strtab = x_(get_strtab_section)(sh_arr, symtab->sh_link);
+    strtab = x_(get_strtab_section)(sh_arr, resolve_endianess(symtab->sh_link));
     if (!strtab)
         return 1;
 
-    sym_arr = (Elf_Sym *) (g_elf_file.content + symtab->sh_offset);
-    n_sym = symtab->sh_size / sizeof(Elf_Sym);
+    sym_arr = (Elf_Sym *) (g_elf_file.content + resolve_endianess(symtab->sh_offset));
+    n_sym = resolve_endianess(symtab->sh_size) / sizeof(Elf_Sym);
     sym_info_arr = x_(get_symbols_info)(sym_arr, &n_sym, strtab, sh_arr);
     if (!sym_info_arr)
         return 1;
