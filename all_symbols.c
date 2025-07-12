@@ -15,5 +15,6 @@ int INITIALIZED = 10;
 static int initialized = 10;
 
 int main() {
+    static int bho = 1;
     return 0;
 }

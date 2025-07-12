@@ -50,7 +50,7 @@ From the ELF header, we extract three key fields to find the Section Header Tabl
 We can then access the array of section headers (`ElfN_Shdr`):
 
 ```c
-ElfN_Shdr *sh_arr = (ElfN_Shdr *)(*file_content* + header->e_shoff);
+ElfN_Shdr *sh_arr = (ElfN_Shdr *)(file_content + header->e_shoff);
 ```
 
 Each `ElfN_Shdr` have all the infos of a section within the file:
@@ -61,12 +61,11 @@ Each `ElfN_Shdr` have all the infos of a section within the file:
 </p>
 
 ### 3. **Find the Symbol Table and String Table**
-Now we iterate through the section header array to find the symbol table. Symbols can be in one of two sections:
+Now we iterate through the section header array to find the symbol table. Symbols can be in the section with sh_type:
 
 - **`SHT_SYMTAB`**: This is the primary symbol table, containing a comprehensive list of all symbols, including static variables and local functions. It is essential for linking.
-- **`SHT_DYNSYM`**: This is a smaller, specialized symbol table for dynamic linking. It only contains symbols that are visible outside the file, such as global functions or variables referenced by a shared library.
 
-When we find a section with type `SHT_SYMTAB` or `SHT_DYNSYM`, we have located a symbol table. From its header, we can find the array of symbols (`ElfN_Sym`):
+When we find a section with type `SHT_SYMTAB`, we have located the symbol table. From its header, we use the sh_offset to find the array of (`ElfN_Sym`):
 
 ```c
 ElfN_Sym *symtab = (ElfN_Sym *)(*file_content* + sections[i].sh_offset);
@@ -154,6 +153,83 @@ This tells you what the symbol represents in the program:
 - **Lowercase**: Local binding (`STB_LOCAL`)
 - Special handling for `STB_WEAK` as `W/w`
 </details>
+
+<details>
+<summary>A</summary>
+An **absolute symbol** is a special entry in the symbol table whose "address" is a fixed, constant value, not a location in the program's memory. It’s often used for things like version tags, build numbers, or assembler constants.
+
+**Key points:**
+
+- **Absolute symbols** do not refer to any location in any section (.text, .data, .bss, etc.) of the program.
+- Their value is treated as a constant by the linker and loader.
+
+### Presence in Output
+
+- **Symbol Table:** Yes, absolute symbols are present in the symbol table. You’ll see them with type `A` (uppercase) or `a` (lowercase) in `nm` output.
+- **Object File (.o):** They exist in the symbol table of object files.
+- **Final Executable:** They exist in the symbol table of executables too (unless stripped).
+- **Sections:** They are **not** present in any program section. There is no allocated space for them in the binary.
+
+### Usage
+
+- Absolute symbols are mostly used by linkers, assemblers, and loaders as "labels for values," not for code or data. They are not "real" variables or functions, so you cannot take their address or access them at runtime.
+
+### Example
+
+If you define an absolute global symbol in assembly:
+```asm
+.set ABSOLUTE, 42
+.globl ABSOLUTE
+```
+And inspect with `nm`:
+```
+000000000000002a A ABSOLUTE
+```
+It is present in the symbol table only; its value (`0x2a` or 42) is just a constant.
+
+---
+
+**Summary:**  
+An absolute symbol is present in the symbol table (in object files and executables), but it does **not** correspond to a location in any program section or actual storage. It is a symbol for a constant value, not code or data.
+</details>
+
+<details>
+<summary>B</summary>
+A symbol of type **'b'** refers to a symbol in the **BSS (Block Started by Symbol) segment**.
+
+### What is the BSS Segment?
+
+The BSS segment is a portion of a program's memory space that contains **uninitialized static and global variables**. When the program is loaded into memory, the operating system loader allocates memory for the BSS segment, but it doesn't need to load any data from the object file itself. This is because all variables in the BSS segment are initialized to zero by default at program startup.
+
+This is an optimization: instead of storing a large block of zeros in the executable file on disk, the file only stores information about the *size* of the BSS segment. The loader then allocates and zero-initializes that amount of memory when the program starts.
+
+A **lowercase 'b'** specifically denotes a local (static) symbol in the BSS section. A **uppercase 'B'** denotes a global symbol in the BSS section.
+
+### Assembly Language declaration
+
+
+````asm
+.section .bss
+# To declare a local uninitialized variable (which corresponds to a 'b' symbol)
+.lcomm my_local_var, 4
+# To declare a global uninitialized variable (which corresponds to a 'B' symbol)
+.comm my_global_var, 8
+````
+
+### C Language declaration
+
+````c
+// To declare a local uninitialized variable (which corresponds to a 'b' symbol)
+int global_uninitialized_var;
+// To declare a global uninitialized variable (which corresponds to a 'B' symbol)
+static int local_uninitialized_var;
+
+int main() {
+    return 0;
+}
+````
+</details>
+
 <details>
 <summary>Get Symbol Name</summary>
 
@@ -166,3 +242,39 @@ Elf_Shdr *strtab = &sh_arr[symtab->sh_link];
 char *names = file_content + strtab->sh_offset;
 char *sym_name = names + *symbol*.st_name;
 ```
+
+Excellent question. This gets to the heart of how compilers handle variables with static storage duration.
+
+The variable `bho` is displayed by `nm` because of the `static` keyword. Let's break down exactly why.
+
+### The Role of the `static` Keyword Inside a Function
+
+When you declare a variable inside a function, it normally has **automatic storage duration**. This means:
+*   It's created on the **stack** when the function is called.
+*   It's destroyed when the function exits.
+*   It does not have a permanent memory address and is not a symbol in the object file's symbol table.
+
+However, when you add the `static` keyword to a variable inside a function, its behavior completely changes:
+
+1.  **Storage Duration:** It gets **static storage duration**. This means the variable is allocated once when the program is loaded and it exists for the *entire lifetime of the program*. It is **not** stored on the stack.
+
+2.  **Memory Location:** Because it has a permanent location, it must be stored in one of the program's data segments, just like a global or file-level static variable.
+    *   Since `bho` is initialized to a non-zero value (`static int bho = 1;`), the compiler places it in the **initialized data section** (often named `.data`).
+
+3.  **Symbol Table:** Because `bho` is placed in the `.data` section, it must have an entry in the object file's **symbol table** so the linker knows where it is. This is why `nm` can see it.
+
+### Analyzing the `nm` Output for `bho`
+
+Let's look at the specific line from your `nm` output:
+
+```
+0000000000000008 d bho.0
+```
+
+*   **`d` (Symbol Type):** This is the key. A lowercase `d` means the symbol is in the **initialized data section** and it is a **local symbol** (not visible to other object files). This perfectly matches our variable:
+    *   **Initialized:** `bho = 1`.
+    *   **Local:** The `static` keyword, when used inside a function, gives the variable *no linkage*, meaning it's private to that function and the compiler treats it as a local symbol within the object file.
+
+*   **`bho.0` (Symbol Name):** You declared the variable as `bho`, but the compiler named it `bho.0`. Compilers often do this to prevent name collisions. If you had another function in the same file with its own `static int bho;`, the compiler might name it `bho.1` to keep the symbols unique within the object file.
+
+In summary, **`bho` is displayed by `nm` because the `static` keyword moved it from the temporary function stack to a permanent location in the `.data` section, requiring it to be listed as a local symbol in the object file's symbol table.**
