@@ -16,12 +16,12 @@ RUN groupadd -g ${GID} ${USER} && \
     useradd -m -s /bin/bash -u ${UID} -g ${GID} ${USER} && \
     usermod -aG sudo ${USER}
 
-RUN mkdir /home/${USER}/
+RUN     mkdir /home/${USER}/
 
 COPY    ft_nm /usr/bin/ft_nm
 RUN     chmod 777 /usr/bin/ft_nm
 
 WORKDIR /home/${USER}/ft_nm
-USER ${USER}
+USER    ${USER}
 
 CMD ["sleep", "infinity"]
