@@ -5,13 +5,13 @@
 	"build": {
 		"dockerfile": "Dockerfile",
 		"args": {
-			"USER": "arbutnar",
+			"USER": "developer",
 			"UID": "1000",
 			"GID": "1000"
 		}
 	},
-	"workspaceMount": "source=${localWorkspaceFolder},target=/home/arbutnar/ft_nm,type=bind",
-	"workspaceFolder": "/home/arbutnar/ft_nm",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/home/developer/ft_nm,type=bind",
+	"workspaceFolder": "/home/developer/ft_nm",
 	"customizations": {
 		"vscode": {
 			"extensions": ["ms-vscode.cpptools-extension-pack"]

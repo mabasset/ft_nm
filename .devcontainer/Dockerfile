@@ -1,6 +1,6 @@
 FROM debian:bookworm
 
-ARG USER=developer
+ARG USER=student
 ARG UID=1000
 ARG GID=1000
 
