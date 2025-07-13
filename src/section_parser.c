@@ -36,7 +36,7 @@ Elf_Shdr  *x_(get_symtab_section)(Elf_Shdr *sections, size_t num_sections) {
             break;
         }
     }
-    write(STDOUT_FILENO, "ft_nm: ", 4);
+    write(STDOUT_FILENO, "nm: ", 4);
     write(STDOUT_FILENO, g_elf_file.path, ft_strlen(g_elf_file.path));
     write(STDOUT_FILENO, ": no symbols\n", 13);
     return NULL;

@@ -61,33 +61,28 @@ typedef struct {
     char   *value;
 } t_sym_info;
 
-// process.c
+// process_elf.c
 int x32_process_elf();
 int x64_process_elf();
 
-// sections_parser.c - Section header operations
+// section_parser.c - Section header operations
 Elf_Shdr  *x_(get_section_headers)(Elf_Ehdr *header);
 Elf_Shdr  *x_(get_symtab_section)(Elf_Shdr *sections, size_t num_sections);
 Elf_Shdr  *x_(get_strtab_section)(Elf_Shdr *sh_arr, int idx_sym_name);
 
-// symbols_parser.c - Symbol table operations
+// symbol_parser.c - Symbol table operations
 char         x_(get_type)(Elf_Sym symbol, Elf_Shdr *sh_arr);
 char        *x_(get_name)(Elf_Sym symbol, char *names);
 char        *x_(get_value)(Elf_Sym symbol);
 t_sym_info  *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *strtab, Elf_Shdr *sh_arr);
 
-// print.c
-void        print_str_fd(int fd, char *str);
-void        print_usage();
-void        print_matrix(char **matrix);
-int         print_error(char *error_msg);
+// symbol_utils.c
+void    sort_symbols(t_sym_info *sym_info_arr, size_t n_sym);
+void    display_symbols(t_sym_info *sym_info_arr, size_t n_sym);
+void    free_symbols(t_sym_info *sym_info_arr, size_t n_sym);
 
-// utils.c
-size_t      ft_strlen(char *s);
-int         ft_strcmp(char *s1, char *s2);
-void        sort_symbols(t_sym_info *sym_info_arr, size_t n_sym);
-void        display_symbols(t_sym_info *sym_info_arr, size_t n_sym);
-void        free_symbols(t_sym_info *sym_info_arr, size_t n_sym);
+// endian.c - Endian swapping operation
+int         define_endianess(int file_endianess);
 uint16_t    bswap_16(uint16_t val);
 uint32_t    bswap_32(uint32_t val);
 uint64_t    bswap_64(uint64_t val);
@@ -98,5 +93,16 @@ uint64_t    bswap_64(uint64_t val);
     uint64_t: bswap_64(X) \
 )
 # define resolve_endianess(X) (!g_elf_file.endian_match ? bswap(X) : (X))
+
+// utils.c
+size_t  ft_strlen(char *s);
+int     ft_strcmp(char *s1, char *s2);
+char    *ft_strchr(char *str, int search_str);
+
+// print.c
+void    print_str_fd(int fd, char *str);
+void    print_usage();
+void    print_matrix(char **matrix);
+int     print_error(char *error_msg);
 
 #endif /* FT_NM_H */

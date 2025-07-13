@@ -3,6 +3,29 @@
 t_elf_file g_elf_file = { 0 };
 t_flags g_flags = { 0 };
 
+char    *get_file_map(char *file_path, void **map) {
+    int         fd;
+    struct stat file_info;
+
+    fd = open(file_path, O_RDONLY);
+    if (fd == -1)
+        return (errno == ENOENT) ? "No such file": strerror(errno);
+    if (fstat(fd, &file_info) < 0) {
+        close(fd);
+        return strerror(errno);
+    } else if (S_ISDIR(file_info.st_mode)) {
+        close(fd);
+        return "is a directory";
+    }
+    *map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    close(fd);
+    if (*map == NULL || *map == MAP_FAILED)
+        return strerror(errno);
+
+    g_elf_file.size = file_info.st_size;
+    return NULL;
+}
+
 int check_content(char *content) {
     if (g_elf_file.size < sizeof(Elf32_Ehdr) ||
         content[0] != 0x7f || content[1] != 'E' ||
@@ -20,33 +43,15 @@ int check_content(char *content) {
     return 0;
 }
 
-int define_endianess(int file_endianess) {
-    int i, local_endianess;
-
-    i = 1;
-    local_endianess = (*(char *)&i == 1) ? ELFDATA2LSB : ELFDATA2MSB;
-    return (local_endianess == file_endianess) ? 1 : 0;
-}
-
 int ft_nm(char *file_path) {
-    int         fd, ret;
-    struct stat file_info;
-    void        *map;
-    char        *content;
+    int     ret;
+    void    *map = NULL;
+    char    *content, *err;
 
     g_elf_file.path = file_path;
-    fd = open(file_path, O_RDONLY);
-    if (fd == -1)
-        return print_error(strerror(errno));
-    if (fstat(fd, &file_info) < 0) {
-        close(fd);
-        return print_error(strerror(errno));
-    }
-    map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    close(fd);
-    if (map == NULL || map == MAP_FAILED)
-        return print_error(strerror(errno));
-    g_elf_file.size = file_info.st_size;
+    err = get_file_map(file_path, &map);
+    if (err)
+        return print_error(err);
     content = (char *) map;
     if (check_content(content)) {
         munmap(map, g_elf_file.size);
