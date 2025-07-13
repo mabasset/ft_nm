@@ -3,12 +3,22 @@
 t_elf_file g_elf_file = { 0 };
 t_flags g_flags = { 0 };
 
+// typedef struct {
+//     char    *str;
+//     int     warn;
+//     int     s_quotes;
+// } t_error;
+
 char    *get_file_map(char *file_path, void **map) {
     int         fd;
     struct stat file_info;
 
     fd = open(file_path, O_RDONLY);
-    if (fd == -1)
+    if (fd == -1) {
+        if (errno != ENOENT)
+            return strerror(errno);
+            //return (t_error){ strerror(errno), 0, 0 };
+    }
         return (errno == ENOENT) ? "No such file": strerror(errno);
     if (fstat(fd, &file_info) < 0) {
         close(fd);
@@ -45,17 +55,21 @@ int check_content(char *content) {
 
 int ft_nm(char *file_path) {
     int     ret;
-    void    *map = NULL;
+    //t_error err;
+    void    *map;
     char    *content, *err;
 
     g_elf_file.path = file_path;
     err = get_file_map(file_path, &map);
+    //if (err.str)
     if (err)
         return print_error(err);
+        //return print_error(err.str);
     content = (char *) map;
     if (check_content(content)) {
         munmap(map, g_elf_file.size);
         return print_error("file format not recognized");
+        //return print_error((t_error){ "file format not recognized", 0, 0 });
     }
     g_elf_file.content = content;
     g_elf_file.endian_match = define_endianess(content[EI_DATA]);
