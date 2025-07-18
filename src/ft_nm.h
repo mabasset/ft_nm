@@ -61,6 +61,16 @@ typedef struct {
     char   *value;
 } t_sym_info;
 
+typedef enum {
+    MSG_ERROR,
+    MSG_WARNING
+} t_msg_type;
+
+typedef enum {
+    NO_QUOTES,
+    SINGLE_QUOTES
+} t_quote_style;
+
 // process_elf.c
 int x32_process_elf();
 int x64_process_elf();
@@ -103,6 +113,6 @@ char    *ft_strchr(char *str, int search_str);
 void    print_str_fd(int fd, char *str);
 void    print_usage();
 void    print_matrix(char **matrix);
-int     print_error(char *error_msg);
+int     print_error(char *err_msg, t_msg_type type, t_quote_style quotes);
 
 #endif /* FT_NM_H */

@@ -78,13 +78,19 @@ void    print_matrix(char **matrix) {
     print_matrix_fd(1, matrix);
 }
 
-int print_error(char *error) {
+int print_error(char *err_msg, t_msg_type type, t_quote_style quotes) {
     write(2, "nm: ", 4);
+    if (type == MSG_WARNING)
+        write(2, "Warning: ", 9);
     if (g_elf_file.path != NULL) {
-        write(2, "\'", 1);
+        if (quotes == SINGLE_QUOTES)
+            write(2, "\'", 1);
         write(2, g_elf_file.path, ft_strlen(g_elf_file.path));
-        write(2, "\': ", 3);
+        if (quotes == SINGLE_QUOTES)
+            write(2, "\': ", 3);
+        else
+            write(2, ": ", 2);
     }
-    print_str_fd(2, error);
+    print_str_fd(2, err_msg);
     return (1);
 }
