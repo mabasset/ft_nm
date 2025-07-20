@@ -1,19 +1,21 @@
 #include <stdio.h>
 
-asm(".globl ABSOLUTE\n\t"
-    ".set ABSOLUTE, 10");
-extern const int ABSOLUTE;
+asm(".globl absolute_symbol\n\t"
+    ".set absolute_symbol, 10");
+extern const int global_absolute;
+asm(".set local_absolute, 10");
+extern const int local_absolute;
 
-int         COMMON;
-static int  uninitialized;
+int         global_common;
+static int  local_uninitialized;
 
-int         INITIALIZED = 10;
-static int  initialized = 10;
+int         global_initialized = 10;
+static int  local_initialized = 10;
 
-const int           READ_ONLY = 30;
-static const int    read_only = 20;
+const int           global_constant = 30;
+static const int    local_constant = 20;
 
-extern int UNDEFINED;
+extern int undefined;
 asm(".globl unique\n\t"
     ".type unique, @gnu_unique_object\n\t"
     ".size unique, 4\n\t"
@@ -21,12 +23,13 @@ asm(".globl unique\n\t"
     ".long 42");
 extern int unique;
 
-// 'V' symbol - a global weak object.
-// It can be overridden by a strong symbol of the same name from another file.
-int weak_global __attribute__((weak)) = 100;
+int initialized_weak_variable __attribute__((weak)) = 100;
+int uninitialized_weak_variable __attribute__((weak));
 
-// Note: A local weak object ('v') cannot be created in C, as the 'weak'
-// attribute requires external linkage, which 'static' prevents.
+void defined_weak_function(void) __attribute__((weak));
+void defined_weak_function(void) {
+}
+void undefined_weak_function(void) __attribute__((weak));
 
 static void indirect_function_impl(void) {
 }
@@ -36,11 +39,23 @@ static void (*resolve_indirect_function(void))(void) {
 void indirect_function(void) __attribute__((ifunc("resolve_indirect_function")));
 
 int main() {
-    volatile void *ptr = &UNDEFINED;
-    volatile void *ptr2 = &unique;
-    volatile void *ptr3 = &weak_global;
-    (void)ptr2;
-    (void)ptr3;
+    volatile const void *ptr;
+    ptr = &global_absolute;
+    ptr = &local_absolute;
+    ptr = &global_common;
+    ptr = &local_uninitialized;
+    ptr = &global_initialized;
+    ptr = &local_initialized;
+    ptr = &global_constant;
+    ptr = &local_constant;
+    ptr = &undefined;
+    ptr = &unique;
+    ptr = &initialized_weak_variable;
+    ptr = &uninitialized_weak_variable;
+    (void)ptr;
+
+    defined_weak_function();
+    undefined_weak_function();
     indirect_function();
     return 0;
 }
