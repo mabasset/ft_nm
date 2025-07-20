@@ -242,39 +242,12 @@ Elf_Shdr *strtab = &sh_arr[symtab->sh_link];
 char *names = file_content + strtab->sh_offset;
 char *sym_name = names + *symbol*.st_name;
 ```
+</details>
 
-Excellent question. This gets to the heart of how compilers handle variables with static storage duration.
-
-The variable `bho` is displayed by `nm` because of the `static` keyword. Let's break down exactly why.
-
-### The Role of the `static` Keyword Inside a Function
-
-When you declare a variable inside a function, it normally has **automatic storage duration**. This means:
-*   It's created on the **stack** when the function is called.
-*   It's destroyed when the function exits.
-*   It does not have a permanent memory address and is not a symbol in the object file's symbol table.
-
-However, when you add the `static` keyword to a variable inside a function, its behavior completely changes:
-
-1.  **Storage Duration:** It gets **static storage duration**. This means the variable is allocated once when the program is loaded and it exists for the *entire lifetime of the program*. It is **not** stored on the stack.
-
-2.  **Memory Location:** Because it has a permanent location, it must be stored in one of the program's data segments, just like a global or file-level static variable.
-    *   Since `bho` is initialized to a non-zero value (`static int bho = 1;`), the compiler places it in the **initialized data section** (often named `.data`).
-
-3.  **Symbol Table:** Because `bho` is placed in the `.data` section, it must have an entry in the object file's **symbol table** so the linker knows where it is. This is why `nm` can see it.
-
-### Analyzing the `nm` Output for `bho`
-
-Let's look at the specific line from your `nm` output:
-
-```
-0000000000000008 d bho.0
-```
-
-*   **`d` (Symbol Type):** This is the key. A lowercase `d` means the symbol is in the **initialized data section** and it is a **local symbol** (not visible to other object files). This perfectly matches our variable:
-    *   **Initialized:** `bho = 1`.
-    *   **Local:** The `static` keyword, when used inside a function, gives the variable *no linkage*, meaning it's private to that function and the compiler treats it as a local symbol within the object file.
-
-*   **`bho.0` (Symbol Name):** You declared the variable as `bho`, but the compiler named it `bho.0`. Compilers often do this to prevent name collisions. If you had another function in the same file with its own `static int bho;`, the compiler might name it `bho.1` to keep the symbols unique within the object file.
-
-In summary, **`bho` is displayed by `nm` because the `static` keyword moved it from the temporary function stack to a permanent location in the `.data` section, requiring it to be listed as a local symbol in the object file's symbol table.**
+## Bonus
+Manage following options:
+- -a
+- -g
+- -u
+- -r
+- -p

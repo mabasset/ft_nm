@@ -3,6 +3,32 @@
 t_elf_file g_elf_file = { 0 };
 t_flags g_flags = { 0 };
 
+int get_file_map(char *file_path, void **map) {
+    int         fd;
+    struct stat file_info;
+
+    fd = open(file_path, O_RDONLY);
+    if (fd == -1) {
+        if (errno == ENOENT)
+            return print_error("No such file", MSG_WARNING, SINGLE_QUOTES);
+        return 1;
+    }
+    if (fstat(fd, &file_info) < 0) {
+        close(fd);
+        return print_error(strerror(errno), MSG_ERROR, SINGLE_QUOTES);
+    } else if (S_ISDIR(file_info.st_mode)) {
+        close(fd);
+        return print_error("is a directory", MSG_WARNING, SINGLE_QUOTES);
+    }
+    *map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    close(fd);
+    if (*map == NULL || *map == MAP_FAILED)
+        return 1;
+
+    g_elf_file.size = file_info.st_size;
+    return 0;
+}
+
 int check_content(char *content) {
     if (g_elf_file.size < sizeof(Elf32_Ehdr) ||
         content[0] != 0x7f || content[1] != 'E' ||
@@ -21,32 +47,23 @@ int check_content(char *content) {
 }
 
 int ft_nm(char *file_path) {
-    int         fd, ret;
-    struct stat file_info;
-    void        *map;
-    char        *content;
+    int     ret;
+    void    *map;
+    char    *content;
 
+    ret = 1;
     g_elf_file.path = file_path;
-    fd = open(file_path, O_RDONLY);
-    if (fd == -1)
-        return print_error(strerror(errno));
-    if (fstat(fd, &file_info) < 0) {
-        close(fd);
-        return print_error(strerror(errno));
-    }
-    map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    close(fd);
-    if (map == NULL || map == MAP_FAILED)
-        return print_error(strerror(errno));
-    g_elf_file.size = file_info.st_size;
+    if (get_file_map(file_path, &map))
+        return ret;
     content = (char *) map;
     if (check_content(content)) {
         munmap(map, g_elf_file.size);
-        return print_error("file format not recognized");
+        return print_error("file format not recognized", MSG_ERROR, NO_QUOTES);
     }
     g_elf_file.content = content;
-    g_elf_file.endian = content[EI_DATA];
+    g_elf_file.endian_match = define_endianess(content[EI_DATA]);
     ret = (content[EI_CLASS] == ELFCLASS32) ? x32_process_elf() : x64_process_elf();
+
     munmap(map, g_elf_file.size);
     return ret;
 }
@@ -73,7 +90,7 @@ int     set_flags(char *flags) {
                 break;
             default:
                 error[19] = flags[i];
-                print_error(error);
+                print_error(error, MSG_ERROR, SINGLE_QUOTES);
                 return 1;
         }
     }
@@ -86,7 +103,7 @@ char    **process_arguments(int argc, char *argv[]) {
 
     file_paths = malloc(sizeof(char *) * (argc + 1));
     if (file_paths == NULL) {
-        print_error(strerror(errno));
+        print_error(strerror(errno), MSG_ERROR, SINGLE_QUOTES);
         return NULL;
     }
     for (int i = 1; i < argc; i++) {
