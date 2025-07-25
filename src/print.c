@@ -94,3 +94,9 @@ int print_error(char *err_msg, t_msg_type type, t_quote_style quotes) {
     print_str_fd(2, err_msg);
     return (1);
 }
+
+void print_no_symbols() {
+    write(STDOUT_FILENO, "nm: ", 4);
+    write(STDOUT_FILENO, g_elf_file.path, ft_strlen(g_elf_file.path));
+    write(STDOUT_FILENO, ": no symbols\n", 13);
+}

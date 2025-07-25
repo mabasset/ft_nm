@@ -90,6 +90,9 @@ t_sym_info  *x_(get_symbols_info)(Elf_Sym *sym_arr, size_t *n_sym, Elf_Shdr *str
     for (size_t i = 1; i < *n_sym; i++) {
         t_sym_info sym_info;
         sym_info.type = x_(get_type)(sym_arr[i], sh_arr);
+        int x = sym_arr[i].st_shndx;
+        if (x < SHN_LORESERVE)
+            printf("%c, %s\n", sym_info.type, sh_arr[x].sh_name);
         sym_info.name = x_(get_name)(sym_arr[i], names);
         if (sym_info.type == '\0' || !sym_info.name || sym_info.name[0] == '\0')
             continue;

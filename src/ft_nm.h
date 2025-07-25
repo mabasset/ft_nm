@@ -17,8 +17,10 @@
 #   define x_(func)     x32_##func
     typedef Elf32_Ehdr  Elf_Ehdr;
     typedef Elf32_Shdr  Elf_Shdr;
-    typedef Elf32_Sym   Elf_Sym ;
+    typedef Elf32_Sym   Elf_Sym;
     typedef Elf32_Shdr  Elf_Shdr;
+    typedef Elf32_Half  Elf_Half;
+    typedef Elf32_Word  Elf_Word;
     typedef uint32_t    Elf_Off;
     typedef uint32_t    Elf_Addr;
 #   define ELF_ST_BIND  ELF32_ST_BIND
@@ -28,8 +30,10 @@
 #   define x_(func)     x64_##func
     typedef Elf64_Ehdr  Elf_Ehdr;
     typedef Elf64_Shdr  Elf_Shdr;
-    typedef Elf64_Sym   Elf_Sym ;
+    typedef Elf64_Sym   Elf_Sym;
     typedef Elf64_Shdr  Elf_Shdr;
+    typedef Elf64_Half  Elf_Half;
+    typedef Elf64_Word  Elf_Word;
     typedef uint64_t    Elf_Off;
     typedef uint64_t    Elf_Addr;
 #   define ELF_ST_BIND  ELF64_ST_BIND
@@ -40,10 +44,13 @@
 typedef uint16_t    Elf_Half;
 
 typedef struct {
-    char    *path;
-    char    *content;
-    size_t  size;
-    int     endian_match;
+    char        *path;
+    size_t      size;
+    int         endian_match;
+    char        *content;
+    Elf_Ehdr    *header;
+    Elf_Shdr    *sections_headers;
+    Elf_Shdr    *symbol_section_header;
 } t_elf_file;
 
 typedef struct {
@@ -74,11 +81,6 @@ typedef enum {
 // process_elf.c
 int x32_process_elf();
 int x64_process_elf();
-
-// section_parser.c - Section header operations
-Elf_Shdr  *x_(get_section_headers)(Elf_Ehdr *header);
-Elf_Shdr  *x_(get_symtab_section)(Elf_Shdr *sections, size_t num_sections);
-Elf_Shdr  *x_(get_strtab_section)(Elf_Shdr *sh_arr, int idx_sym_name);
 
 // symbol_parser.c - Symbol table operations
 char         x_(get_type)(Elf_Sym symbol, Elf_Shdr *sh_arr);
@@ -114,5 +116,6 @@ void    print_str_fd(int fd, char *str);
 void    print_usage();
 void    print_matrix(char **matrix);
 int     print_error(char *err_msg, t_msg_type type, t_quote_style quotes);
+void    print_no_symbols();
 
 #endif /* FT_NM_H */
