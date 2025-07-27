@@ -1,75 +1,105 @@
 #include "ft_nm.h"
 
-extern t_elf_file   g_elf_file;
-extern t_flags      g_flags;
+extern t_flags  g_flags;
 
-Elf_Shdr  *x_(get_sections_headers)(Elf_Ehdr *file_header) {
+int x_(init_sections)(t_sections *sections, Elf_Ehdr *file_header, t_string mapped_file) {
     Elf_Off     offset;
-    Elf_Half    count;
-    Elf_Half    size;
+    Elf_Word    count;
+    Elf_Word    size;
 
     offset = resolve_endianess(file_header->e_shoff);
     count = resolve_endianess(file_header->e_shnum);
     size = resolve_endianess(file_header->e_shentsize);
-    if (offset == 0 || offset + count * size > g_elf_file.size)
-        return NULL;
+    if (offset + count * size > mapped_file.size)
+        return 1;
+    sections->headers = (Elf_Shdr *) (mapped_file.content + offset);
+    sections->count = count;
 
-    return (Elf_Shdr *) (g_elf_file.content + offset);
+    return 0;
 }
 
-Elf_Shdr  *x_(get_symbol_table_header)(Elf_Shdr *sections_headers, Elf_Half headers_count) {
+Elf_Shdr  *x_(get_shdr)(t_sections sections, Elf_Word shndx) {
+    Elf_Word    index;
 
-    for (size_t i = 0; i < headers_count; i++) {
-        if (sections_headers[i].sh_type != SHT_SYMTAB)
+    index = resolve_endianess(shndx);
+    if (index >= sections.count)
+        return NULL;
+
+    return sections.headers + index;
+}
+
+char  *x_(get_sh)(Elf_Shdr *shdr, t_string mapped_file) {
+    Elf_Off sh_offset;
+    uint_t  sh_size;
+
+    sh_offset = resolve_endianess(shdr->sh_offset);
+    sh_size = resolve_endianess(shdr->sh_size);
+    if (sh_offset + sh_size > mapped_file.size)
+        return NULL;
+
+    return mapped_file.content + sh_offset;
+}
+
+int x_(init_strtab)(t_string *shstr, t_sections sections, Elf_Word shstrndx, t_string mapped_file) {
+    Elf_Shdr    *shstrhdr;
+    char        *strtab;
+
+    shstrhdr = x_(get_shdr)(sections, shstrndx);
+    if (shstrhdr == NULL)
+        return 1;
+    strtab = x_(get_sh)(shstrhdr, mapped_file);
+    if (strtab == NULL)
+        return 1; 
+    shstr->content = strtab;
+    shstr->size = resolve_endianess(shstrhdr->sh_size);
+
+    return 0;
+}
+
+Elf_Shdr  *x_(get_symhdr)(t_sections sections) {
+    for (size_t i = 0; i < sections.count; i++) {
+        if (sections.headers[i].sh_type != SHT_SYMTAB)
             continue ;
-        return sections_headers + i;
+        return sections.headers + i;
     }
-    print_no_symbols();
 
     return NULL;
 }
 
-char  *x_(get_string_table)(Elf_Shdr *sections_headers, Elf_Word string_table_header_index) {
-    Elf_Shdr    *string_table_header;
-    Elf32_Off   sh_offset;
+int x_(init_symbols)(t_symbols *symbols, t_sections sections, t_string mapped_file) {
+    Elf_Shdr    *symhdr;
+    Elf_Sym     *symtab;
 
-    strtab = &sh_arr[idx_sym_name];
-    sh_offset = resolve_endianess(strtab->sh_offset);
-    if (sh_offset == 0 || sh_offset >= g_elf_file.size)
-        return NULL;
-    return strtab;
+    symhdr = x_(get_symhdr)(sections);
+    if (symhdr == NULL)
+        return 1;
+    symtab = (Elf_Sym *) x_(get_sh)(symhdr, mapped_file);
+    if (symtab == NULL)
+        return 1;
+
+    if (x_(init_strtab)(&symbols->strtab, sections, symhdr->sh_link, mapped_file))
+        return 1;
+
+    if (symhdr->sh_entsize == 0)
+        return 1;
+    symbols->count = resolve_endianess(symhdr->sh_size / symhdr->sh_entsize);
+    symbols->table = symtab;
+
+    return 0;
 }
 
-int    x_(process_elf)() {
+t_sym_info  **x_(get_symbols_info)(t_string mapped_file) {
     Elf_Ehdr    *file_header;
-    Elf_Shdr    *sections_headers;
-    Elf_Shdr    *symbol_table_header;
-    char        *symbols_string_table;
-    char        *sections_string_table;
-    Elf_Sym     *simbols;
-    int         simbols_count;
+    t_sections  sections;
+    t_symbols   symbols;
 
-    t_sym_info  *sym_info_arr;
+    file_header = (Elf_Ehdr *) mapped_file.content;
+    if (x_(init_sections)(&sections, file_header, mapped_file))
+        return NULL;
+    if (x_(init_strtab)(&sections.strtab, sections, file_header->e_shstrndx, mapped_file))
+        return NULL;
+    if (x_(init_symbols)(&symbols, sections, mapped_file))
+        return (t_sym_info **) ft_calloc(1);
 
-    file_header = (Elf_Ehdr *) g_elf_file.content;
-    sections_headers = x_(get_sections_headers)(file_header);
-    if (sections_headers == NULL)
-        return 1;
-    symbol_table_header = x_(get_symbol_table_header)(sections_headers, file_header->e_shnum);
-    if (symbol_table_header == NULL)
-        return 0;
-    symbols_string_table = x_(get_string_table)(sections_headers, resolve_endianess(symbol_table_header->sh_link));
-    if (string_table == NULL)
-        return 1;
-    simbols = (Elf_Sym *) (g_elf_file.content + resolve_endianess(symbol_table_header->sh_offset));
-    simbols_count = resolve_endianess(symbol_table_header->sh_size) / sizeof(Elf_Sym);
-
-    sym_info_arr = x_(get_symbols_info)(sym_arr, &n_sym, strtab, sh_arr);
-    if (!sym_info_arr)
-        return 1;
-    if (!g_flags.no_sort)
-        sort_symbols(sym_info_arr, n_sym);
-    display_symbols(sym_info_arr, n_sym);
-    free_symbols(sym_info_arr, n_sym);
-    return 0;
+    return x_(init_symbols_infos)(symbols, sections);
 }

@@ -1,15 +1,23 @@
 #include "ft_nm.h"
 
-extern t_elf_file   g_elf_file;
-extern t_flags      g_flags;
+#include "ft_nm.h"
 
-int define_endianess(int file_endianess) {
-    int i, local_endianess;
-
-    i = 1;
-    local_endianess = (*(char *)&i == 1) ? ELFDATA2LSB : ELFDATA2MSB;
-    return (local_endianess == file_endianess) ? 1 : 0;
+static int is_little_endian(int file_endianess) {
+    return file_endianess == ELFDATA2LSB;
 }
+
+static int is_big_endian(int file_endianess) {
+    return file_endianess == ELFDATA2MSB;
+}
+
+static int (*resolve_endianess_checker(void))(int) {
+    int i = 1;
+    if (*(char *)&i == 1)
+        return is_little_endian;
+    return is_big_endian;
+}
+
+int define_endianess(int file_endianess) __attribute__((ifunc("resolve_endianess_checker")));
 
 uint16_t    bswap_16(uint16_t val) {
     return (val >> 8) | (val << 8);

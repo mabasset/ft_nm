@@ -1,9 +1,8 @@
 #include "ft_nm.h"
 
-extern t_elf_file   g_elf_file;
 extern t_flags      g_flags;
 
-void    sort_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
+void    sort_symbols(t_sym_info *sym_info_arr) {
     t_sym_info  temp;
     int         diff;
 
@@ -19,7 +18,7 @@ void    sort_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
     }
 }
 
-void    display_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
+void    display_symbols(t_sym_info *sym_info_arr) {
     static char *undefined_types = "Uw";
     static char *external_types = "BCDGRSTUWw";
     t_sym_info  sym_info;
@@ -44,7 +43,7 @@ void    display_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
     }
 }
 
-void    free_symbols(t_sym_info *sym_info_arr, size_t n_sym) {
+void    free_symbols(t_sym_info *sym_info_arr) {
     for (size_t i = 0; i < n_sym; i++)
         free(sym_info_arr[i].value);
     free(sym_info_arr);

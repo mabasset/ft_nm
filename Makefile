@@ -14,9 +14,7 @@ SRCS_LIST = main.c \
 			print.c \
 			endian.c \
 			process_elf.c \
-			section_parser.c \
-			symbol_parser.c \
-			symbol_utils.c
+			symbol_parser.c
 
 # Prepend source directory to the list
 SRCS = $(addprefix $(S_DIR)/,$(SRCS_LIST))
@@ -36,7 +34,7 @@ HDRS = $(wildcard $(S_DIR)/*.h)
 # Compiler and flags
 CC = gcc
 # -I$(S_DIR) tells gcc where to find ft_nm.h
-CFLAGS = -Wall -Wextra -Werror -g
+CFLAGS = -Wall -Wextra -g
 
 # Default rule
 all: $(NAME)

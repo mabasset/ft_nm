@@ -1,10 +1,12 @@
 #include <stdio.h>
 
-asm(".globl absolute_symbol\n\t"
-    ".set absolute_symbol, 10");
+asm(".globl global_absolute\n\t"
+    ".set global_absolute, 10");
 extern const int global_absolute;
 asm(".set local_absolute, 10");
 extern const int local_absolute;
+asm(".set trap.c, 0");
+extern const int trap_c asm("trap.c");
 
 int         global_common;
 static int  local_uninitialized;

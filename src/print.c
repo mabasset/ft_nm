@@ -1,7 +1,5 @@
 #include "ft_nm.h"
 
-extern t_elf_file g_elf_file;
-
 void    print_str_fd(int fd, char *str) {
     size_t  size;
 
@@ -78,14 +76,14 @@ void    print_matrix(char **matrix) {
     print_matrix_fd(1, matrix);
 }
 
-int print_error(char *err_msg, t_msg_type type, t_quote_style quotes) {
+int print_error(char *file_path, char *err_msg, t_msg_type type, t_quote_style quotes) {
     write(2, "nm: ", 4);
     if (type == MSG_WARNING)
         write(2, "Warning: ", 9);
-    if (g_elf_file.path != NULL) {
+    if (file_path != NULL) {
         if (quotes == SINGLE_QUOTES)
             write(2, "\'", 1);
-        write(2, g_elf_file.path, ft_strlen(g_elf_file.path));
+        write(2, file_path, ft_strlen(file_path));
         if (quotes == SINGLE_QUOTES)
             write(2, "\': ", 3);
         else
@@ -95,8 +93,8 @@ int print_error(char *err_msg, t_msg_type type, t_quote_style quotes) {
     return (1);
 }
 
-void print_no_symbols() {
-    write(STDOUT_FILENO, "nm: ", 4);
-    write(STDOUT_FILENO, g_elf_file.path, ft_strlen(g_elf_file.path));
-    write(STDOUT_FILENO, ": no symbols\n", 13);
+void print_no_symbols(char *file_path) {
+   write(STDOUT_FILENO, "nm: ", 4);
+   write(STDOUT_FILENO, file_path, ft_strlen(file_path));
+   write(STDOUT_FILENO, ": no symbols\n", 13);
 }

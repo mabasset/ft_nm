@@ -1,43 +1,51 @@
 #include "ft_nm.h"
 
-t_elf_file g_elf_file = { 0 };
 t_flags g_flags = { 0 };
 
-int get_file_map(char *file_path, void **map) {
-    int         fd;
-    struct stat file_info;
+int get_file_fd(char *file_path) {
+    int fd;
 
     fd = open(file_path, O_RDONLY);
-    if (fd == -1) {
-        if (errno == ENOENT)
-            return print_error("No such file", MSG_WARNING, SINGLE_QUOTES);
-        return 1;
-    }
-    if (fstat(fd, &file_info) < 0) {
-        close(fd);
-        return print_error(strerror(errno), MSG_ERROR, SINGLE_QUOTES);
-    } else if (S_ISDIR(file_info.st_mode)) {
-        close(fd);
-        return print_error("is a directory", MSG_WARNING, SINGLE_QUOTES);
-    }
-    *map = mmap(NULL, file_info.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    close(fd);
-    if (*map == NULL || *map == MAP_FAILED)
-        return 1;
-
-    g_elf_file.size = file_info.st_size;
-    return 0;
+    if (errno == ENOENT)
+        print_error(file_path, "No such file", MSG_WARNING, SINGLE_QUOTES);
+    return fd;
 }
 
-int check_content(char *content) {
-    if (g_elf_file.size < sizeof(Elf32_Ehdr) ||
+size_t   get_file_size(int fd, char *file_path) {
+    struct stat file_info;
+
+    if (fstat(fd, &file_info) < 0) {
+        print_error(file_path, strerror(errno), MSG_ERROR, SINGLE_QUOTES);
+        return 0;
+    }
+    if (S_ISDIR(file_info.st_mode)) {
+        print_error(file_path, "is a directory", MSG_WARNING, SINGLE_QUOTES);
+        return 0;
+    }
+    return file_info.st_size;
+}
+
+char    *get_file_content(int fd, size_t file_size) {
+    void    *map;
+
+    map = mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == NULL || map == MAP_FAILED)
+        return NULL;
+    return (char *) map;
+}
+
+int check_content(t_string mapped_file) {
+    char    *content = mapped_file.content;
+    size_t  size = mapped_file.size;
+
+    if (size < sizeof(Elf32_Ehdr) ||
         content[0] != 0x7f || content[1] != 'E' ||
         content[2] != 'L' || content[3] != 'F') {
         return 1;
     }
     if(content[EI_CLASS] != ELFCLASS32 && content[EI_CLASS] != ELFCLASS64)
         return 1;
-    if (content[EI_CLASS] == ELFCLASS64 && g_elf_file.size < sizeof(Elf64_Ehdr))
+    if (content[EI_CLASS] == ELFCLASS64 && size < sizeof(Elf64_Ehdr))
         return 1;
     if (content[EI_DATA] != ELFDATA2LSB && content[EI_DATA] != ELFDATA2MSB)
         return 1;
@@ -47,25 +55,36 @@ int check_content(char *content) {
 }
 
 int ft_nm(char *file_path) {
-    int     ret;
-    void    *map;
-    char    *content;
+    int         fd __attribute__ ((cleanup(close_fd)));
+    t_string    mapped_file __attribute__ ((cleanup(unmap_file))) = { 0 };
+    t_sym_info  **symbols_info __attribute__ ((cleanup(free_matrix)));
 
-    ret = 1;
-    g_elf_file.path = file_path;
-    if (get_file_map(file_path, &map))
-        return ret;
-    content = (char *) map;
-    if (check_content(content)) {
-        munmap(map, g_elf_file.size);
-        return print_error("file format not recognized", MSG_ERROR, NO_QUOTES);
+    fd = get_file_fd(file_path);
+    if (fd < 0)
+        return 1;
+    mapped_file.size = get_file_size(fd, file_path);
+    if (mapped_file.size == 0)
+        return 1;
+    mapped_file.content = get_file_content(fd, mapped_file.size);
+    if (check_content(mapped_file)) {
+        print_error(file_path, "file format not recognized", MSG_ERROR, NO_QUOTES);
+        return 1;
     }
-    g_elf_file.content = content;
-    g_elf_file.endian_match = define_endianess(content[EI_DATA]);
-    ret = (content[EI_CLASS] == ELFCLASS32) ? x32_process_elf() : x64_process_elf();
+    g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
 
-    munmap(map, g_elf_file.size);
-    return ret;
+    symbols_info = (mapped_file.content[EI_CLASS] == ELFCLASS32) ? 
+       x32_get_symbols_info(mapped_file) : x64_get_symbols_info(mapped_file);
+    if (symbols_info == NULL)
+        return 1;
+    if (symbols_info[0] == NULL) {
+        print_no_symbols(file_path);
+        return 0;
+    }
+
+    // if (!g_flags.no_sort)
+    //     sort_symbols(symbols_info);
+    // display_symbols(symbols_info);
+    return 0;
 }
 
 int     set_flags(char *flags) {
@@ -90,7 +109,7 @@ int     set_flags(char *flags) {
                 break;
             default:
                 error[19] = flags[i];
-                print_error(error, MSG_ERROR, SINGLE_QUOTES);
+                print_error(NULL, error, MSG_ERROR, SINGLE_QUOTES);
                 return 1;
         }
     }
@@ -103,7 +122,7 @@ char    **process_arguments(int argc, char *argv[]) {
 
     file_paths = malloc(sizeof(char *) * (argc + 1));
     if (file_paths == NULL) {
-        print_error(strerror(errno), MSG_ERROR, SINGLE_QUOTES);
+        print_error(NULL, strerror(errno), MSG_ERROR, SINGLE_QUOTES);
         return NULL;
     }
     for (int i = 1; i < argc; i++) {
