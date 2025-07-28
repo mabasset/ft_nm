@@ -13,9 +13,6 @@
 # include <stdlib.h>
 # include <stdint.h>
 
-#define FALSE   0
-#define TRUE    1
-
 # ifdef X32
 #   define x_(func)     x32_##func
     typedef Elf32_Ehdr  Elf_Ehdr;
@@ -57,9 +54,12 @@ typedef struct {
 } t_flags;
 
 typedef struct {
-    char   type;
-    char   *name;
-    char   *value;
+    uint16_t        shndx;
+    unsigned char   type;
+    unsigned char   bind;
+    char            type;
+    char            *name;
+    char            *value;
 } t_sym_info;
 
 typedef enum {
@@ -94,15 +94,14 @@ t_sym_info  **x32_get_symbols_info(t_string mapped_file);
 t_sym_info  **x64_get_symbols_info(t_string mapped_file);
 
 // symbol_parser.c - Symbol table operations
-char        *x_(get_value)(Elf_Sym symbol);
-char         x_(get_type)(Elf_Sym symbol, t_sections sections);
-char        *x_(get_name)(Elf_Sym symbol, t_string strtab);
+// char        *x_(get_value)(Elf_Sym symbol);
+// char         x_(get_type)(Elf_Sym symbol, t_sections sections);
+// char        *x_(get_name)(Elf_Sym symbol, t_string strtab);
 t_sym_info  **x_(init_symbols_infos)(t_symbols symbols, t_sections sections);
 
 // symbol_utils.c
-void    sort_symbols(t_sym_info *sym_info_arr);
-void    display_symbols(t_sym_info *sym_info_arr);
-void    free_symbols(t_sym_info *sym_info_arr);
+void    sort_symbols(t_sym_info **symbols_info);
+void    display_symbols(t_sym_info **symbols_info);
 
 // endian.c - Endian swapping operation
 int         define_endianess(int file_endianess);
@@ -121,16 +120,16 @@ uint64_t    bswap_64(uint64_t val);
 size_t  ft_strlen(char *s);
 int     ft_strcmp(char *s1, char *s2);
 char    *ft_strchr(char *str, int search_str);
+void    **ft_calloc(size_t size);
 void    close_fd(int *fd);
 void    unmap_file(t_string *mapped_file);
 void    free_matrix(t_sym_info ***symbols_infos);
-void    **ft_calloc(size_t size);
 
 // print.c
-void    print_str_fd(int fd, char *str);
 void    print_usage();
+void    print_str_fd(int fd, char *str);
 void    print_matrix(char **matrix);
 int     print_error(char *file_path, char *err_msg, t_msg_type type, t_quote_style quotes);
-void    print_no_symbols();
+void    print_no_symbols(char *file_path);
 
 #endif /* FT_NM_H */

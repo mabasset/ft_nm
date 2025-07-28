@@ -1,5 +1,13 @@
 {
     "files.associations": {
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "functional": "c",
+        "array": "c",
+        "compare": "c",
+        "ostream": "c",
+        "ranges": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c"
     }
 }

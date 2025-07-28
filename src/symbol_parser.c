@@ -38,49 +38,62 @@ char    *x_(get_symbol_section_name)(uint16_t st_shndx, t_sections sections) {
     return sections.strtab.content + sh_name; 
 }
 
-char    x_(find_section_name_type)(uint16_t st_shndx, t_sections sections) {
+void    x_(find_section_name_type)(char *c, uint16_t st_shndx, t_sections sections) {
     char    *sh_names[] = { ".bss", ".data", ".text", ".rodata", NULL };
     char    sym_types[] = { 'B', 'D', 'T', 'R', '\0' };
     char    *sh_name;
 
     sh_name = x_(get_symbol_section_name)(st_shndx, sections);
     if (sh_name == NULL)
-        return '?';
+        return;
     for (int i = 0; sh_names[i] != NULL; i++)
         if (ft_strcmp(sh_name, sh_names[i]) == 0)
-            return sym_types[i];
-
-    return '?';
+            *c = sym_types[i];
 }
 
-char    x_(find_special_type)(uint16_t st_shndx) {
+void    x_(find_special_type)(char *c, uint16_t st_shndx) {
     switch (st_shndx) {
         case SHN_UNDEF:
-            return 'U';
+            *c = 'U';
+            break;
         case SHN_COMMON:
-            return 'C';
+            *c = 'C';
+            break;
         case SHN_ABS:
-            return 'A';
-        default:
-            return '?';
+            *c = 'A';
+            break;
     }
+}
+
+void    x_(find_symbol_relations)(char *c, uint16_t st_shndx, unsigned char bind, unsigned char type) {
+    if (bind == STB_GNU_UNIQUE)
+        *c = 'u';
+    if (bind == STB_WEAK) {
+        if (type == STT_OBJECT)
+            *c = (st_shndx == SHN_UNDEF) ? 'v' : 'V';
+        *c = (st_shndx == SHN_UNDEF) ? 'w' : 'W';
+    }
+}
+
+char    x_(resolve_visibility)(char c, unsigned char bind) {
+    if (bind == STB_LOCAL && c != 'U')
+        return c += ('a' - 'A');
+    return c;
 }
 
 char    x_(get_type)(Elf_Sym symbol, t_sections sections) {
     unsigned char   bind, type;
     uint16_t        st_shndx;
-    char            c = '?';
+    char            c = '\0';
 
     bind = ELF_ST_BIND(symbol.st_info);
     type = ELF_ST_TYPE(symbol.st_info);
-
     st_shndx = resolve_endianess(symbol.st_shndx);
-    c = x_(find_special_type)(st_shndx);
-    if ()
-    c = x_(find_section_name_type)(st_shndx, sections);
-    if (c == '?') 
 
-    return c;
+    x_(find_special_type)(&c, st_shndx);
+    x_(find_section_name_type)(&c, st_shndx, sections);
+    x_(find_symbol_relations)(&c, st_shndx, bind, type);
+    return x_(resolve_visibility)(c, bind);
 }
 
 char    *x_(get_name)(Elf_Sym symbol, t_string strtab) {
@@ -93,34 +106,33 @@ char    *x_(get_name)(Elf_Sym symbol, t_string strtab) {
 }
 
 t_sym_info  **x_(init_symbols_infos)(t_symbols symbols, t_sections sections) {
-    t_sym_info  **symbols_infos;
-    Elf_Sym     sym;
-    char        *name;
-    int         j = -1;
+    t_sym_info      **symbols_infos;
+    Elf_Sym         symbol;
+    uint16_t        st_shndx;
+    unsigned char   st_type;
+    char            type, *name;
+    int             j = -1;
 
-    printf("%d\n", symbols.count);
     symbols_infos = (t_sym_info **) malloc(sizeof(t_sym_info *) * (symbols.count + 1));
     if (symbols_infos == NULL)
         return NULL;
 
     for (Elf_Word i = 0; i < symbols.count; i++) {
-        sym = symbols.table[i];
-        name = x_(get_name)(sym, symbols.strtab);
-        if (name == NULL || name[0] == '\0')
-            continue ;
+        symbol = symbols.table[i];
+        st_shndx = resolve_endianess(symbol.st_shndx);
+
+        type = x_(get_type)(symbol, sections);
+        name = x_(get_name)(symbol, symbols.strtab);
+        if (name == NULL || !name[0] == NULL)
+            continue;
         j++;
         symbols_infos[j] = malloc(sizeof(t_sym_info));
-        symbols_infos[j]->value = x_(get_value)(sym);
-        symbols_infos[j]->type = x_(get_type)(sym, sections);
+        symbols_infos[j]->value = x_(get_value)(symbol);
+        symbols_infos[j]->type = type;
         symbols_infos[j]->name = name;
-        // Elf_Shdr *shdr = &sections.headers[sym.st_shndx];
-        // printf("%s %s %s\n", sym_info->value, sym_info->name, sections.strtab.content + shdr->sh_name);
-        // if (sym.st_shndx < symbols.count) {
-        //     Elf_Shdr shdr = sections.headers[sym.st_shndx];
-            printf("%s %c %s\n", symbols_infos[j]->value, symbols_infos[j]->type, symbols_infos[j]->name);
-        // }
+        printf("%s %c %s\n", symbols_infos[j]->value, symbols_infos[j]->type, symbols_infos[j]->name);
     }
     symbols_infos[++j] = NULL;
-    printf("ciao\n");
+
     return symbols_infos;
 }
