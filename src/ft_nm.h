@@ -54,9 +54,11 @@ typedef struct {
 } t_flags;
 
 typedef struct {
-    uint16_t        shndx;
-    unsigned char   type;
-    unsigned char   bind;
+    uint16_t        st_shndx;
+    uint_t          st_value;
+    Elf_Word        st_name;
+    unsigned char   st_type;
+    unsigned char   st_bind;
     char            type;
     char            *name;
     char            *value;
@@ -94,9 +96,6 @@ t_sym_info  **x32_get_symbols_info(t_string mapped_file);
 t_sym_info  **x64_get_symbols_info(t_string mapped_file);
 
 // symbol_parser.c - Symbol table operations
-// char        *x_(get_value)(Elf_Sym symbol);
-// char         x_(get_type)(Elf_Sym symbol, t_sections sections);
-// char        *x_(get_name)(Elf_Sym symbol, t_string strtab);
 t_sym_info  **x_(init_symbols_infos)(t_symbols symbols, t_sections sections);
 
 // symbol_utils.c

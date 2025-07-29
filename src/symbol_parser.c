@@ -2,23 +2,21 @@
 
 extern t_flags  g_flags;
 
-char    *x_(get_value)(Elf_Sym symbol) {
+char    *x_(get_value)(t_sym_info symbol_info) {
     char        *str;
     const char  *hex_digits = "0123456789abcdef";
-    uint_t      st_value;
 
     str = malloc(Elf_Addr_len + 1);
     if (!str)
         return NULL;
-    st_value = resolve_endianess(symbol.st_value);
 
     for (int i = Elf_Addr_len - 1; i >= 0; i--) {
-        if (resolve_endianess(symbol.st_shndx) == SHN_UNDEF) {
+        if (symbol_info.st_shndx == SHN_UNDEF) {
             str[i] = ' ';
             continue;
         }
-        str[i] = hex_digits[st_value & 0xF];
-        st_value >>= 4;
+        str[i] = hex_digits[symbol_info.st_value & 0xF];
+        symbol_info.st_value >>= 4;
     }
     str[Elf_Addr_len] = '\0';
     return str;
@@ -65,13 +63,13 @@ void    x_(find_special_type)(char *c, uint16_t st_shndx) {
     }
 }
 
-void    x_(find_symbol_relations)(char *c, uint16_t st_shndx, unsigned char bind, unsigned char type) {
-    if (bind == STB_GNU_UNIQUE)
+void    x_(find_symbol_relations)(char *c, t_sym_info symbol_info) {
+    if (symbol_info.st_bind == STB_GNU_UNIQUE)
         *c = 'u';
-    if (bind == STB_WEAK) {
-        if (type == STT_OBJECT)
-            *c = (st_shndx == SHN_UNDEF) ? 'v' : 'V';
-        *c = (st_shndx == SHN_UNDEF) ? 'w' : 'W';
+    if (symbol_info.st_bind == STB_WEAK) {
+        if (symbol_info.type == STT_OBJECT)
+            *c = (symbol_info.st_shndx == SHN_UNDEF) ? 'v' : 'V';
+        *c = (symbol_info.st_shndx == SHN_UNDEF) ? 'w' : 'W';
     }
 }
 
@@ -81,55 +79,62 @@ char    x_(resolve_visibility)(char c, unsigned char bind) {
     return c;
 }
 
-char    x_(get_type)(Elf_Sym symbol, t_sections sections) {
-    unsigned char   bind, type;
-    uint16_t        st_shndx;
-    char            c = '\0';
+char    x_(get_type)(t_sym_info symbol_info, t_sections sections) {
+    char    c = '\0';
 
-    bind = ELF_ST_BIND(symbol.st_info);
-    type = ELF_ST_TYPE(symbol.st_info);
-    st_shndx = resolve_endianess(symbol.st_shndx);
-
-    x_(find_special_type)(&c, st_shndx);
-    x_(find_section_name_type)(&c, st_shndx, sections);
-    x_(find_symbol_relations)(&c, st_shndx, bind, type);
-    return x_(resolve_visibility)(c, bind);
+    x_(find_special_type)(&c, symbol_info.st_shndx);
+    x_(find_section_name_type)(&c, symbol_info.st_shndx, sections);
+    x_(find_symbol_relations)(&c, symbol_info);
+    return x_(resolve_visibility)(c, symbol_info.st_bind);
 }
 
-char    *x_(get_name)(Elf_Sym symbol, t_string strtab) {
-    uint32_t    st_name;
+char    *x_(get_name)(t_sym_info symbol_info, t_string strtab, t_sections sections) {
+    if (!g_flags.all && (symbol_info.st_type == STT_SECTION || symbol_info.st_type == STT_FILE))
+        return '\0';
+    if (symbol_info.st_type == STT_SECTION)
+        return x_(x64_get_symbol_section_name)(symbol_info.st_shndx, sections);
 
-    st_name = resolve_endianess(symbol.st_name);
-    if (st_name == 0 || st_name >= strtab.size)
+    if (symbol_info.st_name == 0 || symbol_info.st_name >= strtab.size)
         return NULL;
-    return strtab.content + st_name;
+
+    return strtab.content + symbol_info.st_name;
+}
+
+t_sym_info  *x_(get_symbol_info)(Elf_Sym symbol, t_symbols symbols, t_sections sections) {
+    t_sym_info  symbol_info;
+
+    symbol_info.st_shndx = resolve_endianess(symbol.st_shndx);
+    symbol_info.st_value = resolve_endianess(symbol.st_value);
+    symbol_info.st_name = resolve_endianess(symbol.st_name);
+    symbol_info.st_bind = ELF_ST_BIND(symbol.st_info);
+    symbol_info.st_type = ELF_ST_TYPE(symbol.st_info);
+
+    symbol_info.value = x_(get_value)(symbol_info);
+    if (symbol_info.value == NULL)
+        return NULL;
+    symbol_info.type = x_(get_type)(symbol_info, sections);
+    if (symbol_info.type == NULL)
+        return NULL;
+    symbol_info.name = x_(get_name)(symbol_info, symbols.strtab, sections);
+    if (symbol_info.name == NULL || symbol_info.name[0] == NULL)
+        return NULL;
+
 }
 
 t_sym_info  **x_(init_symbols_infos)(t_symbols symbols, t_sections sections) {
-    t_sym_info      **symbols_infos;
-    Elf_Sym         symbol;
-    uint16_t        st_shndx;
-    unsigned char   st_type;
-    char            type, *name;
-    int             j = -1;
+    t_sym_info  **symbols_infos;
+    Elf_Sym     symbol;
+    int         j = 0;
 
     symbols_infos = (t_sym_info **) malloc(sizeof(t_sym_info *) * (symbols.count + 1));
     if (symbols_infos == NULL)
         return NULL;
 
     for (Elf_Word i = 0; i < symbols.count; i++) {
-        symbol = symbols.table[i];
-        st_shndx = resolve_endianess(symbol.st_shndx);
-
-        type = x_(get_type)(symbol, sections);
-        name = x_(get_name)(symbol, symbols.strtab);
-        if (name == NULL || !name[0] == NULL)
+        symbols_infos[j] = x_(get_symbol_info)(symbols.table[i], symbols, sections);
+        if (symbols_infos[j] == NULL)
             continue;
         j++;
-        symbols_infos[j] = malloc(sizeof(t_sym_info));
-        symbols_infos[j]->value = x_(get_value)(symbol);
-        symbols_infos[j]->type = type;
-        symbols_infos[j]->name = name;
         printf("%s %c %s\n", symbols_infos[j]->value, symbols_infos[j]->type, symbols_infos[j]->name);
     }
     symbols_infos[++j] = NULL;
