@@ -71,6 +71,8 @@ int ft_nm(char *file_path) {
         return 1;
     }
     g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
+    g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
+
 
     symbols_info = (mapped_file.content[EI_CLASS] == ELFCLASS32) ? 
        x32_get_symbols_info(mapped_file) : x64_get_symbols_info(mapped_file);
@@ -83,7 +85,7 @@ int ft_nm(char *file_path) {
 
     // if (!g_flags.no_sort)
     //     sort_symbols(symbols_info);
-    // display_symbols(symbols_info);
+    // display_symbols(file_path, symbols_info);
     return 0;
 }
 

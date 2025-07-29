@@ -11,6 +11,7 @@ static int is_big_endian(int file_endianess) {
 }
 
 static int (*resolve_endianess_checker(void))(int) {
+    printf("resolver\n");
     int i = 1;
     if (*(char *)&i == 1)
         return is_little_endian;
@@ -25,7 +26,10 @@ uint16_t    bswap_16(uint16_t val) {
 
 uint32_t    bswap_32(uint32_t val) {
     val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0x00FF00FF);
-    return (val << 16) | (val >> 16);
+    val = (val << 16) | (val >> 16);
+    // printf("resolved %d\n", val);
+
+    return val;
 }
 
 uint64_t    bswap_64(uint64_t val) {

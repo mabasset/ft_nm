@@ -100,7 +100,7 @@ t_sym_info  **x_(init_symbols_infos)(t_symbols symbols, t_sections sections);
 
 // symbol_utils.c
 void    sort_symbols(t_sym_info **symbols_info);
-void    display_symbols(t_sym_info **symbols_info);
+void    display_symbols(char *file_path, t_sym_info **symbols_info);
 
 // endian.c - Endian swapping operation
 int         define_endianess(int file_endianess);

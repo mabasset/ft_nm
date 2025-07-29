@@ -19,9 +19,9 @@ int x_(init_sections)(t_sections *sections, Elf_Ehdr *file_header, t_string mapp
 }
 
 Elf_Shdr  *x_(get_shdr)(t_sections sections, Elf_Word shndx) {
-    Elf_Word    index;
+    Elf_Word    index = shndx;
 
-    index = resolve_endianess(shndx);
+    // index = resolve_endianess(shndx);
     if (index >= sections.count)
         return NULL;
 
@@ -44,6 +44,7 @@ int x_(init_strtab)(t_string *shstr, t_sections sections, Elf_Word shstrndx, t_s
     Elf_Shdr    *shstrhdr;
     char        *strtab;
 
+    printf("%d\n", shstrndx);
     shstrhdr = x_(get_shdr)(sections, shstrndx);
     if (shstrhdr == NULL)
         return 1;
@@ -57,8 +58,11 @@ int x_(init_strtab)(t_string *shstr, t_sections sections, Elf_Word shstrndx, t_s
 }
 
 Elf_Shdr  *x_(get_symhdr)(t_sections sections) {
+    Elf_Word    sh_type;
+
     for (size_t i = 0; i < sections.count; i++) {
-        if (sections.headers[i].sh_type != SHT_SYMTAB)
+        sh_type = resolve_endianess(sections.headers[i].sh_type);
+        if (sh_type != SHT_SYMTAB)
             continue ;
         return sections.headers + i;
     }
@@ -94,10 +98,14 @@ t_sym_info  **x_(get_symbols_info)(t_string mapped_file) {
     t_symbols   symbols;
 
     file_header = (Elf_Ehdr *) mapped_file.content;
+    printf("ciao\n");
     if (x_(init_sections)(&sections, file_header, mapped_file))
         return NULL;
-    if (x_(init_strtab)(&sections.strtab, sections, file_header->e_shstrndx, mapped_file))
+    printf("%d\n", file_header->e_shstrndx);
+    Elf_Word ok = resolve_endianess(file_header->e_shstrndx);
+    if (x_(init_strtab)(&sections.strtab, sections, (Elf_Word) ok, mapped_file))
         return NULL;
+    printf("ciao\n");
     if (x_(init_symbols)(&symbols, sections, mapped_file))
         return (t_sym_info **) ft_calloc(1);
 

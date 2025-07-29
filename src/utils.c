@@ -46,7 +46,8 @@ void free_matrix(t_sym_info ***symbols_infos) {
     if (symbols_infos == NULL || *symbols_infos == NULL)
         return;
     for (int i = 0; (*symbols_infos)[i] != NULL; i++) {
-        free((*symbols_infos)[i]->value);
+        if ((*symbols_infos)[i]->value != NULL)
+            free((*symbols_infos)[i]->value);
         free((*symbols_infos)[i]);
     }
     free(*symbols_infos);

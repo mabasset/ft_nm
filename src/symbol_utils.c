@@ -2,49 +2,47 @@
 
 extern t_flags      g_flags;
 
-void    sort_symbols(t_sym_info *sym_info_arr) {
-    t_sym_info  temp;
+void    sort_symbols(t_sym_info **symbol_info) {
+    t_sym_info *temp;
+    size_t      i, j;
     int         diff;
 
-    for (size_t i = 0; i < n_sym - 1; i++) {
-        for (size_t j = 0; j < n_sym - i - 1; j++) {
-            diff = ft_strcmp(sym_info_arr[j].name, sym_info_arr[j + 1].name);
+    for (i = 0; symbol_info[i] != NULL && symbol_info[i + 1] != NULL; i++) {
+        for (j = 0; symbol_info[j] != NULL && symbol_info[j + 1] != NULL; j++) {
+            if (j >= (SIZE_MAX - i - 1))
+                break;
+            diff = ft_strcmp(symbol_info[j]->name, symbol_info[j + 1]->name);
             if ((diff > 0 && !g_flags.reverse) || (diff < 0 && g_flags.reverse)) {
-                temp = sym_info_arr[j];
-                sym_info_arr[j] = sym_info_arr[j + 1];
-                sym_info_arr[j + 1] = temp;
+                temp = symbol_info[j];
+                symbol_info[j] = symbol_info[j + 1];
+                symbol_info[j + 1] = temp;
             }
         }
     }
 }
 
-void    display_symbols(t_sym_info *sym_info_arr) {
+void    display_symbols(char *file_path, t_sym_info **symbol_info) {
     static char *undefined_types = "Uw";
     static char *external_types = "BCDGRSTUWw";
-    t_sym_info  sym_info;
+    t_sym_info  *sym_info;
 
     if (g_flags.path) {
         write(STDOUT_FILENO, "\n", 1);
-        write(STDOUT_FILENO, g_elf_file.path, ft_strlen(g_elf_file.path));
+        write(STDOUT_FILENO, file_path, ft_strlen(file_path));
         write(STDOUT_FILENO, ":\n", 2);
     }
-    for (size_t i = 0; i < n_sym; i++) {
-        sym_info = sym_info_arr[i];
-        if (g_flags.undefined && !ft_strchr(undefined_types, sym_info.type))
+    for (size_t i = 0; symbol_info[i] != NULL; i++) {
+        sym_info = symbol_info[i];
+        if (g_flags.undefined && !ft_strchr(undefined_types, sym_info->type))
             continue ;
-        if (g_flags.external && !ft_strchr(external_types, sym_info.type))
+        if (g_flags.external && !ft_strchr(external_types, sym_info->type))
             continue ;
-        write(STDOUT_FILENO, sym_info.value, ft_strlen(sym_info.value));
+        write(STDOUT_FILENO, sym_info->value, ft_strlen(sym_info->value));
         write(STDOUT_FILENO, " ", 1);
-        write(STDOUT_FILENO, &sym_info.type, 1);
+        write(STDOUT_FILENO, &sym_info->type, 1);
         write(STDOUT_FILENO, " ", 1);
-        write(STDOUT_FILENO, sym_info.name, ft_strlen(sym_info.name));
+        write(STDOUT_FILENO, sym_info->name, ft_strlen(sym_info->name));
         write(STDOUT_FILENO, "\n", 1);
     }
 }
 
-void    free_symbols(t_sym_info *sym_info_arr) {
-    for (size_t i = 0; i < n_sym; i++)
-        free(sym_info_arr[i].value);
-    free(sym_info_arr);
-}

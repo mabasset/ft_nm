@@ -20,8 +20,9 @@ RUN groupadd -g ${GID} ${NAME} && \
 USER    ${NAME}
 WORKDIR /home/${NAME}/ft_nm
 
-COPY --chown=${UID}:${GID} src ./src
-COPY --chown=${UID}:${GID} test ./test
-COPY --chown=${UID}:${GID} Makefile .
+# COPY --chown=${UID}:${GID} src ./src
+# COPY --chown=${UID}:${GID} test ./test
+# COPY --chown=${UID}:${GID} Makefile .
+COPY --chown=${UID}:${GID} . .
 
 CMD ["sleep", "infinity"]

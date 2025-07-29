@@ -14,7 +14,8 @@ SRCS_LIST = main.c \
 			print.c \
 			endian.c \
 			process_elf.c \
-			symbol_parser.c
+			symbol_parser.c \
+			symbol_utils.c
 
 # Prepend source directory to the list
 SRCS = $(addprefix $(S_DIR)/,$(SRCS_LIST))
