@@ -7,7 +7,7 @@ int get_file_fd(char *file_path) {
 
     fd = open(file_path, O_RDONLY);
     if (errno == ENOENT)
-        print_error(file_path, "No such file", MSG_WARNING, SINGLE_QUOTES);
+        print_error(file_path, "No such file", MSG_ERROR, SINGLE_QUOTES);
     return fd;
 }
 
@@ -57,7 +57,7 @@ int check_content(t_string mapped_file) {
 int ft_nm(char *file_path) {
     int         fd __attribute__ ((cleanup(close_fd)));
     t_string    mapped_file __attribute__ ((cleanup(unmap_file))) = { 0 };
-    t_sym_info  **symbols_info __attribute__ ((cleanup(free_matrix)));
+    t_sym_info  **symbols_info;
 
     fd = get_file_fd(file_path);
     if (fd < 0)
@@ -71,21 +71,20 @@ int ft_nm(char *file_path) {
         return 1;
     }
     g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
-    g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
-
 
     symbols_info = (mapped_file.content[EI_CLASS] == ELFCLASS32) ? 
        x32_get_symbols_info(mapped_file) : x64_get_symbols_info(mapped_file);
     if (symbols_info == NULL)
         return 1;
     if (symbols_info[0] == NULL) {
-        print_no_symbols(file_path);
+        print_error(file_path, "no symbols", MSG_ERROR, NO_QUOTES);
         return 0;
     }
 
-    // if (!g_flags.no_sort)
-    //     sort_symbols(symbols_info);
-    // display_symbols(file_path, symbols_info);
+    if (!g_flags.no_sort)
+        sort_symbols(symbols_info);
+    display_symbols(symbols_info, file_path, mapped_file.content[EI_CLASS]);
+    free_matrix(&symbols_info);
     return 0;
 }
 
@@ -134,7 +133,7 @@ char    **process_arguments(int argc, char *argv[]) {
                 free(file_paths);
                 return NULL;
             }
-            continue ;
+            continue;
         }
         file_paths[k] = argv[i];
         k++;

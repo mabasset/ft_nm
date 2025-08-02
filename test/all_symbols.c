@@ -50,7 +50,7 @@ int main() {
     ptr = &local_initialized;
     ptr = &global_constant;
     ptr = &local_constant;
-    ptr = &undefined;
+    // ptr = &undefined;
     ptr = &unique;
     ptr = &initialized_weak_variable;
     ptr = &uninitialized_weak_variable;

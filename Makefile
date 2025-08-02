@@ -14,15 +14,14 @@ SRCS_LIST = main.c \
 			print.c \
 			endian.c \
 			process_elf.c \
-			symbol_parser.c \
-			symbol_utils.c
+			symbol.c
 
 # Prepend source directory to the list
 SRCS = $(addprefix $(S_DIR)/,$(SRCS_LIST))
 
 # Separate main.c and utils.c from the generic sources
-NON_GENERIC_SRCS = $(filter %/main.c %/utils.c %/symbol_utils.c %/print.c %/endian.c, $(SRCS))
-GENERIC_SRCS = $(filter-out %/main.c %/utils.c %/symbol_utils.c %/print.c %/endian.c, $(SRCS))
+NON_GENERIC_SRCS = $(filter %/main.c %/utils.c %/print.c %/endian.c, $(SRCS))
+GENERIC_SRCS = $(filter-out %/main.c %/utils.c %/print.c %/endian.c, $(SRCS))
 
 # Object files
 OBJS_NON_GENERIC = $(patsubst $(S_DIR)/%.c, $(O_DIR)/%.o, $(NON_GENERIC_SRCS))
@@ -35,13 +34,14 @@ HDRS = $(wildcard $(S_DIR)/*.h)
 # Compiler and flags
 CC = gcc
 # -I$(S_DIR) tells gcc where to find ft_nm.h
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -Ilibft -Llibft -lft -g
 
 # Default rule
 all: $(NAME)
 
 # Linking rule - combines non-generic, 64-bit, and 32-bit objects
 $(NAME): $(OBJS_NON_GENERIC) $(OBJS_64) $(OBJS_32)
+	make -C libft
 	$(CC) -o $@ $^ $(CFLAGS)
 
 # Rule for non-generic .o files (main.o, utils.o)
@@ -61,9 +61,11 @@ $(O_DIR_32)/%.o: $(S_DIR)/%.c $(HDRS)
 
 clean:
 	rm -rf $(O_DIR)
+	make clean -C libft
 
 fclean: clean
 	rm -f $(NAME)
+	make fclean -C libft
 
 re: fclean all
 

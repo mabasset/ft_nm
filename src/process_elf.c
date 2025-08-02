@@ -19,13 +19,10 @@ int x_(init_sections)(t_sections *sections, Elf_Ehdr *file_header, t_string mapp
 }
 
 Elf_Shdr  *x_(get_shdr)(t_sections sections, Elf_Word shndx) {
-    Elf_Word    index = shndx;
-
-    // index = resolve_endianess(shndx);
-    if (index >= sections.count)
+    if (shndx >= sections.count)
         return NULL;
 
-    return sections.headers + index;
+    return sections.headers + shndx;
 }
 
 char  *x_(get_sh)(Elf_Shdr *shdr, t_string mapped_file) {
@@ -44,7 +41,6 @@ int x_(init_strtab)(t_string *shstr, t_sections sections, Elf_Word shstrndx, t_s
     Elf_Shdr    *shstrhdr;
     char        *strtab;
 
-    printf("%d\n", shstrndx);
     shstrhdr = x_(get_shdr)(sections, shstrndx);
     if (shstrhdr == NULL)
         return 1;
@@ -63,7 +59,7 @@ Elf_Shdr  *x_(get_symhdr)(t_sections sections) {
     for (size_t i = 0; i < sections.count; i++) {
         sh_type = resolve_endianess(sections.headers[i].sh_type);
         if (sh_type != SHT_SYMTAB)
-            continue ;
+            continue;
         return sections.headers + i;
     }
 
@@ -81,12 +77,12 @@ int x_(init_symbols)(t_symbols *symbols, t_sections sections, t_string mapped_fi
     if (symtab == NULL)
         return 1;
 
-    if (x_(init_strtab)(&symbols->strtab, sections, symhdr->sh_link, mapped_file))
+    if (x_(init_strtab)(&symbols->strtab, sections, resolve_endianess(symhdr->sh_link), mapped_file))
         return 1;
 
     if (symhdr->sh_entsize == 0)
         return 1;
-    symbols->count = resolve_endianess(symhdr->sh_size / symhdr->sh_entsize);
+    symbols->count = resolve_endianess(symhdr->sh_size) / resolve_endianess(symhdr->sh_entsize);
     symbols->table = symtab;
 
     return 0;
@@ -98,16 +94,12 @@ t_sym_info  **x_(get_symbols_info)(t_string mapped_file) {
     t_symbols   symbols;
 
     file_header = (Elf_Ehdr *) mapped_file.content;
-    printf("ciao\n");
     if (x_(init_sections)(&sections, file_header, mapped_file))
         return NULL;
-    printf("%d\n", file_header->e_shstrndx);
-    Elf_Word ok = resolve_endianess(file_header->e_shstrndx);
-    if (x_(init_strtab)(&sections.strtab, sections, (Elf_Word) ok, mapped_file))
+    if (x_(init_strtab)(&sections.strtab, sections, resolve_endianess(file_header->e_shstrndx), mapped_file))
         return NULL;
-    printf("ciao\n");
     if (x_(init_symbols)(&symbols, sections, mapped_file))
-        return (t_sym_info **) ft_calloc(1);
+        return (t_sym_info **) ft_calloc(1, sizeof(void *));
 
-    return x_(init_symbols_infos)(symbols, sections);
+    return x_(init_symbols_info)(symbols, sections);
 }

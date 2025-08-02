@@ -1,36 +1,6 @@
 #include "ft_nm.h"
 
-size_t    ft_strlen(char *str) {
-    size_t i;
-
-    i = 0;
-    while (str[i] != '\0')
-        i++;
-    return i;
-}
-
-int ft_strcmp(char *s1, char *s2) {
-    int i;
-
-    for (i = 0; s1[i] != '\0'; i++) {
-        if (s1[i] > s2[i] || !s2[i])
-            return 1;
-        else if (s1[i] < s2[i])
-            return -1;
-    }
-    if (s2[i])
-        return -1;
-    return 0;
-}
-
-char *ft_strchr(char *str, int search_str) {
-    while (*str != '\0') {
-        if (*str == search_str)
-            return str;
-        str++;
-    }
-    return NULL;
-}
+extern t_flags  g_flags;
 
 void    close_fd(int *fd) {
     if (*fd > 0)
@@ -42,24 +12,52 @@ void    unmap_file(t_string *mapped_file) {
         munmap(mapped_file->content, mapped_file->size);
 }
 
-void free_matrix(t_sym_info ***symbols_infos) {
-    if (symbols_infos == NULL || *symbols_infos == NULL)
+void free_matrix(t_sym_info ***symbols_info) {
+    if (symbols_info == NULL || *symbols_info == NULL)
         return;
-    for (int i = 0; (*symbols_infos)[i] != NULL; i++) {
-        if ((*symbols_infos)[i]->value != NULL)
-            free((*symbols_infos)[i]->value);
-        free((*symbols_infos)[i]);
+    for (int i = 0; (*symbols_info)[i] != NULL; i++) {
+        free((*symbols_info)[i]->value);
+        free((*symbols_info)[i]);
     }
-    free(*symbols_infos);
+    free(*symbols_info);
 }
 
-void    **ft_calloc(size_t size) {
-    void    **ptr;
+void    sort_symbols(t_sym_info **symbols_info) {
+    t_sym_info  temp;
+    int         diff;
 
-    ptr = malloc(sizeof(void *) * size);
-    if (ptr == NULL)
-        return NULL;
-    for(size_t i = 0; i < size; i++)
-        ptr[i] = NULL;
-    return ptr;
+    for (int i = 0; symbols_info[i] != NULL; i++) {
+        for (int j = i + 1; symbols_info[j] != NULL; j++) {
+            diff = ft_strncmp(symbols_info[i]->name, symbols_info[j]->name, ft_strlen(symbols_info[i]->name));
+            if ((diff > 0 && !g_flags.reverse) || (diff < 0 && g_flags.reverse)) {
+                temp = *symbols_info[i];
+                *symbols_info[i] = *symbols_info[j];
+                *symbols_info[j] = temp;
+            }
+        }
+    }
+}
+
+void    display_symbols(t_sym_info **symbols_info, char *file_path, int ei_class) {
+    static char *undefined_types = "Uw";
+    static char *external_types = "BCDGRSTUWw";
+    t_sym_info  *symbol_info;
+    const char  *fmt;
+
+    fmt = (ei_class == ELFCLASS32) ? "%8s %c %s\n" : "%16s %c %s\n";
+
+    if (g_flags.path)
+        ft_printf("\n%s:\n", file_path);
+    for (size_t i = 0; symbols_info[i] != NULL; i++) {
+        symbol_info = symbols_info[i];
+        if (g_flags.undefined && !ft_strchr(undefined_types, symbol_info->type))
+            continue;
+        if (g_flags.external && !ft_strchr(external_types, symbol_info->type))
+            continue;
+        if (!g_flags.all && (symbol_info->st_type == STT_SECTION || symbol_info->st_type == STT_FILE))
+            continue;
+        if (symbol_info->type == '?')
+            continue;
+        ft_printf(fmt, symbol_info->value, symbol_info->type, symbol_info->name);
+    }
 }
