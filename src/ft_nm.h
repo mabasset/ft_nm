@@ -60,20 +60,11 @@ typedef struct {
     uint16_t        st_shndx;
     unsigned char   st_type;
     unsigned char   st_bind;
-    char            type;
-    char            *name;
+    char            *sh_name;
     char            *value;
+    char            *name;
+    char            type;
 } t_sym_info;
-
-typedef enum {
-    MSG_ERROR,
-    MSG_WARNING
-} t_msg_type;
-
-typedef enum {
-    NO_QUOTES,
-    SINGLE_QUOTES
-} t_quote_style;
 
 typedef struct {
     char    *content;
@@ -122,6 +113,5 @@ void    display_symbols(t_sym_info **symbols_info, char *file_path, int ei_class
 // print.c
 void    print_usage();
 void    print_matrix(char **matrix);
-int     print_error(char *file_path, char *err_msg, t_msg_type type, t_quote_style quotes);
 
 #endif /* FT_NM_H */

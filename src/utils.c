@@ -27,13 +27,13 @@ void    sort_symbols(t_sym_info **symbols_info) {
     int         diff;
 
     for (int i = 0; symbols_info[i] != NULL; i++) {
-        for (int j = i + 1; symbols_info[j] != NULL; j++) {
-            diff = ft_strcmp(symbols_info[i]->name, symbols_info[j]->name);
-            if (diff == 0)
-                diff = ft_strcmp(symbols_info[i]->value, symbols_info[j]->value);
+        for (int j = 0; symbols_info[j] != NULL; j++) {
+            if (symbols_info[j + 1] == NULL)
+                break;
+            diff = ft_strcmp(symbols_info[j]->name, symbols_info[j + 1]->name);
             if ((diff > 0 && !g_flags.reverse) || (diff < 0 && g_flags.reverse)) {
-                temp = *symbols_info[i];
-                *symbols_info[i] = *symbols_info[j];
+                temp = *symbols_info[j + 1];
+                *symbols_info[j + 1] = *symbols_info[j];
                 *symbols_info[j] = temp;
             }
         }
@@ -42,7 +42,7 @@ void    sort_symbols(t_sym_info **symbols_info) {
 
 void    display_symbols(t_sym_info **symbols_info, char *file_path, int ei_class) {
     static char *undefined_types = "Uw";
-    static char *external_types = "BCDGRSTUWw";
+    static char *external_types = "ABCDGRSTUVvWw";
     t_sym_info  *symbol_info;
     const char  *fmt;
 

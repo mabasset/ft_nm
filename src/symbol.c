@@ -16,7 +16,7 @@ char    *x_(get_symbol_section_name)(uint16_t st_shndx, t_sections sections) {
     return sections.strtab.content + sh_name;
 }
 
-char    *x_(get_name)(t_sym_info symbol_info, t_string strtab, t_sections sections) {
+char    *x_(get_name)(t_sym_info symbol_info, t_string strtab) {
     if (symbol_info.st_name >= strtab.size)
         return NULL;
     if (symbol_info.st_name != 0)
@@ -24,7 +24,7 @@ char    *x_(get_name)(t_sym_info symbol_info, t_string strtab, t_sections sectio
     if (symbol_info.st_shndx == SHN_ABS)
         return "";
     if (symbol_info.st_type == STT_SECTION)
-        return x_(get_symbol_section_name)(symbol_info.st_shndx, sections);
+        return symbol_info.sh_name;
     return NULL;
 }
 
@@ -55,6 +55,11 @@ void    x_(find_section_type)(char *c, t_sym_info symbol_info, t_sections sectio
     if (symbol_info.st_shndx >= SHN_LORESERVE || symbol_info.st_shndx >= sections.count)
         return;
 
+    if (ft_strncmp(symbol_info.sh_name, ".debug", 6) == 0) {
+        *c = 'N';
+        return;
+    }
+
     sh_flags = resolve_endianess(sections.headers[symbol_info.st_shndx].sh_flags);
     sh_type = resolve_endianess(sections.headers[symbol_info.st_shndx].sh_type);
 
@@ -67,7 +72,7 @@ void    x_(find_section_type)(char *c, t_sym_info symbol_info, t_sections sectio
     else if (sh_flags & SHF_ALLOC)
         *c = 'R';
     else
-        *c = 'N';
+        *c = 'n';
 }
 
 void    x_(find_special_type)(char *c, t_sym_info symbol_info) {
@@ -92,13 +97,13 @@ void    x_(resolve_visibility)(char *c, t_sym_info symbol_info) {
     if (*c == '?')
         return;
 
-    else if (symbol_info.st_bind == STB_WEAK) {
+    else if (symbol_info.st_bind == STB_WEAK && symbol_info.st_type != STT_GNU_IFUNC) {
         if (symbol_info.st_type == STT_OBJECT)
             *c = (symbol_info.st_shndx == SHN_UNDEF) ? 'v' : 'V';
         else
             *c = (symbol_info.st_shndx == SHN_UNDEF) ? 'w' : 'W';
     }
-    if (symbol_info.st_bind == STB_LOCAL)
+    if (symbol_info.st_bind == STB_LOCAL && *c != 'N' && *c != 'n')
         *c += ('a' - 'A');
 }
 
@@ -119,12 +124,13 @@ t_sym_info  *x_(create_symbol_info)(Elf_Sym symbol, t_symbols symbols, t_section
     sym_info = ft_calloc(1, sizeof(t_sym_info));
     if (sym_info == NULL)
         return NULL;
-    sym_info->st_bind  = ELF_ST_BIND(symbol.st_info);
-    sym_info->st_type  = ELF_ST_TYPE(symbol.st_info);
-    sym_info->st_name  = resolve_endianess(symbol.st_name);
-    sym_info->st_shndx  = resolve_endianess(symbol.st_shndx);
+    sym_info->st_bind = ELF_ST_BIND(symbol.st_info);
+    sym_info->st_type = ELF_ST_TYPE(symbol.st_info);
+    sym_info->st_name = resolve_endianess(symbol.st_name);
+    sym_info->st_shndx = resolve_endianess(symbol.st_shndx);
+    sym_info->sh_name = x_(get_symbol_section_name)(sym_info->st_shndx, sections);
 
-    name = x_(get_name)(*sym_info, symbols.strtab, sections);
+    name = x_(get_name)(*sym_info, symbols.strtab);
     if (name == NULL) {
         free(sym_info);
         return NULL;
