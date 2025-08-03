@@ -1,7 +1,5 @@
 #include "ft_nm.h"
 
-#include "ft_nm.h"
-
 static int is_little_endian(int file_endianess) {
     return file_endianess == ELFDATA2LSB;
 }

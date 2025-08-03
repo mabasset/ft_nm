@@ -17,17 +17,15 @@ char    *x_(get_symbol_section_name)(uint16_t st_shndx, t_sections sections) {
 }
 
 char    *x_(get_name)(t_sym_info symbol_info, t_string strtab, t_sections sections) {
-    if (symbol_info.st_name == 0) {
-        if (symbol_info.st_shndx == SHN_ABS)
-            return "";
-        if (symbol_info.st_type == STT_SECTION)
-            return x_(get_symbol_section_name)(symbol_info.st_shndx, sections);
-        return NULL;
-    }
     if (symbol_info.st_name >= strtab.size)
         return NULL;
-
-    return strtab.content + symbol_info.st_name;
+    if (symbol_info.st_name != 0)
+        return strtab.content + symbol_info.st_name;
+    if (symbol_info.st_shndx == SHN_ABS)
+        return "";
+    if (symbol_info.st_type == STT_SECTION)
+        return x_(get_symbol_section_name)(symbol_info.st_shndx, sections);
+    return NULL;
 }
 
 char    *x_(get_value)(Elf_Sym symbol, uint16_t st_shndx) {
@@ -51,7 +49,7 @@ char    *x_(get_value)(Elf_Sym symbol, uint16_t st_shndx) {
     return str;
 }
 
-void    x_(find_section_name_type)(char *c, t_sym_info symbol_info, t_sections sections) {
+void    x_(find_section_type)(char *c, t_sym_info symbol_info, t_sections sections) {
     Elf64_Word  sh_flags, sh_type;
 
     if (symbol_info.st_shndx >= SHN_LORESERVE || symbol_info.st_shndx >= sections.count)
@@ -107,9 +105,10 @@ void    x_(resolve_visibility)(char *c, t_sym_info symbol_info) {
 char    x_(get_type)(t_sym_info symbol_info, t_sections sections) {
     char    c = '?';
 
-    x_(find_section_name_type)(&c, symbol_info, sections);
+    x_(find_section_type)(&c, symbol_info, sections);
     x_(find_special_type)(&c, symbol_info);
     x_(resolve_visibility)(&c, symbol_info);
+
     return c;
 }
 

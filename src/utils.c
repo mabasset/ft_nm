@@ -28,7 +28,9 @@ void    sort_symbols(t_sym_info **symbols_info) {
 
     for (int i = 0; symbols_info[i] != NULL; i++) {
         for (int j = i + 1; symbols_info[j] != NULL; j++) {
-            diff = ft_strncmp(symbols_info[i]->name, symbols_info[j]->name, ft_strlen(symbols_info[i]->name));
+            diff = ft_strcmp(symbols_info[i]->name, symbols_info[j]->name);
+            if (diff == 0)
+                diff = ft_strcmp(symbols_info[i]->value, symbols_info[j]->value);
             if ((diff > 0 && !g_flags.reverse) || (diff < 0 && g_flags.reverse)) {
                 temp = *symbols_info[i];
                 *symbols_info[i] = *symbols_info[j];

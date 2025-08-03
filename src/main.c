@@ -7,7 +7,7 @@ int get_file_fd(char *file_path) {
 
     fd = open(file_path, O_RDONLY);
     if (errno == ENOENT)
-        print_error(file_path, "No such file", MSG_ERROR, SINGLE_QUOTES);
+        ft_dprintf(STDERR_FILENO, "nm: '%s': No such file\n", file_path);
     return fd;
 }
 
@@ -15,11 +15,11 @@ size_t   get_file_size(int fd, char *file_path) {
     struct stat file_info;
 
     if (fstat(fd, &file_info) < 0) {
-        print_error(file_path, strerror(errno), MSG_ERROR, SINGLE_QUOTES);
+        ft_dprintf(STDERR_FILENO, "nm: '%s': %s\n", file_path, strerror(errno));
         return 0;
     }
     if (S_ISDIR(file_info.st_mode)) {
-        print_error(file_path, "is a directory", MSG_WARNING, SINGLE_QUOTES);
+        ft_dprintf(STDERR_FILENO, "nm: Warning: '%s' is a directory\n", file_path);
         return 0;
     }
     return file_info.st_size;
@@ -67,7 +67,7 @@ int ft_nm(char *file_path) {
         return 1;
     mapped_file.content = get_file_content(fd, mapped_file.size);
     if (check_content(mapped_file)) {
-        print_error(file_path, "file format not recognized", MSG_ERROR, NO_QUOTES);
+        ft_dprintf(STDERR_FILENO, "nm: %s: file format not recognized\n", file_path, strerror(errno));
         return 1;
     }
     g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
@@ -77,7 +77,7 @@ int ft_nm(char *file_path) {
     if (symbols_info == NULL)
         return 1;
     if (symbols_info[0] == NULL) {
-        print_error(file_path, "no symbols", MSG_ERROR, NO_QUOTES);
+        ft_dprintf(STDERR_FILENO, "nm: %s: no symbols\n", file_path);
         return 0;
     }
 
@@ -110,7 +110,7 @@ int     set_flags(char *flags) {
                 break;
             default:
                 error[19] = flags[i];
-                print_error(NULL, error, MSG_ERROR, SINGLE_QUOTES);
+                ft_dprintf(STDERR_FILENO, "nm: %s\n", error);
                 return 1;
         }
     }
@@ -123,7 +123,7 @@ char    **process_arguments(int argc, char *argv[]) {
 
     file_paths = malloc(sizeof(char *) * (argc + 1));
     if (file_paths == NULL) {
-        print_error(NULL, strerror(errno), MSG_ERROR, SINGLE_QUOTES);
+        ft_dprintf(STDERR_FILENO, "nm: %s\n", strerror(errno));
         return NULL;
     }
     for (int i = 1; i < argc; i++) {

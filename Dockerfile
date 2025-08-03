@@ -25,4 +25,6 @@ WORKDIR /home/${NAME}/ft_nm
 # COPY --chown=${UID}:${GID} Makefile .
 COPY --chown=${UID}:${GID} . .
 
+WORKDIR /home/${NAME}/ft_nm/nm_tester
+
 CMD ["sleep", "infinity"]
