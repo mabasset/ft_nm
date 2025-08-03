@@ -12,7 +12,7 @@
 
 #include "ft_printf.h"
 
-int	ft_printf(const char *str, ...)
+int	ft_dprintf(int fd, const char *str, ...)
 {
 	va_list		arg;
 	t_struct	params;
@@ -32,7 +32,7 @@ int	ft_printf(const char *str, ...)
 		}
 		else
 		{
-			write (1, str, 1);
+			write (fd, str, 1);
 			len++;
 		}
 		str++;

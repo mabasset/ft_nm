@@ -1,2 +1,4 @@
 obj
 ft_nm
+libft/**/*.o
+libft/**/*.a

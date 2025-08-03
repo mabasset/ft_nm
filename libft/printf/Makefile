@@ -11,7 +11,7 @@
 # **************************************************************************** #
 
 NAME = printf.a
-SRCS = ft_char.c ft_number.c ft_printf.c ft_utility.c
+SRCS = ft_char.c ft_number.c ft_printf.c ft_dprintf.c ft_utility.c ft_identifier.c
 OBJ = $(SRCS:.c=.o)
 FLAGS =	-Wall -Wextra -Werror
 
