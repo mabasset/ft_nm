@@ -18,13 +18,8 @@ RUN groupadd -g ${GID} ${NAME} && \
     echo "${NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER    ${NAME}
-WORKDIR /home/${NAME}/ft_nm
+WORKDIR /app/ft_nm
 
-# COPY --chown=${UID}:${GID} src ./src
-# COPY --chown=${UID}:${GID} test ./test
-# COPY --chown=${UID}:${GID} Makefile .
 COPY --chown=${UID}:${GID} . .
-
-WORKDIR /home/${NAME}/ft_nm/nm_tester
 
 CMD ["sleep", "infinity"]

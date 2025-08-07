@@ -88,29 +88,47 @@ int ft_nm(char *file_path) {
     return 0;
 }
 
+char    *handle_long_flag(char *flag) {
+    char    *long_flags[] = {"--debug-syms", "--extern-only", "--undefined-only", "--reverse-sort", "--no-sort"};
+    char    *short_flags[] = {"-a", "-g", "-u", "-r", "-p"};
+    int     size = sizeof(long_flags) / sizeof(char *);
+    int     i;
+
+    for (i = 0; i < size; i++)
+        if (ft_strcmp(flag, long_flags[i]) == 0)
+            break;
+    size = sizeof(short_flags) / sizeof(char *);
+    if (i < size)
+        return short_flags[i];
+
+    ft_dprintf(STDERR_FILENO, "nm: unrecognized option \'%s\'\n", flag);
+    return NULL;
+}
+
 int     set_flags(char *flags) {
-    static char error[25] = "invalid option -- \'?\'";
+    char    *short_flag = NULL;
 
     for (int i = 1; flags[i] != '\0'; i++) {
         switch(flags[i]) {
+            case '-':
+                short_flag = handle_long_flag(flags);
+                if (short_flag == NULL)
+                    return 1;
+                flags = short_flag;
+                i = 0;
+                break;
             case 'a':
-                g_flags.all = 1;
-                break;
+                g_flags.all = 1; break;
             case 'g':
-                g_flags.external = 1;
-                break;
+                g_flags.external = 1; break;
             case 'u':
-                g_flags.undefined = 1;
-                break;
+                g_flags.undefined = 1; break;
             case 'r':
-                g_flags.reverse = 1;
-                break;
+                g_flags.reverse = 1; break;
             case 'p':
-                g_flags.no_sort = 1;
-                break;
+                g_flags.no_sort = 1; break;
             default:
-                error[19] = flags[i];
-                ft_dprintf(STDERR_FILENO, "nm: %s\n", error);
+                ft_dprintf(STDERR_FILENO, "nm: invalid option -- \'%c\'\n", flags[i]);
                 return 1;
         }
     }

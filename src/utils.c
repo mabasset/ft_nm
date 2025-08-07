@@ -41,8 +41,8 @@ void    sort_symbols(t_sym_info **symbols_info) {
 }
 
 void    display_symbols(t_sym_info **symbols_info, char *file_path, int ei_class) {
-    static char *undefined_types = "Uw";
-    static char *external_types = "ABCDGRSTUVvWw";
+    static char *undefined_types = "Uwv";
+    static char *external_types = "ABCDGRSTUVvWwi";
     t_sym_info  *symbol_info;
     const char  *fmt;
 

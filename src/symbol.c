@@ -54,7 +54,6 @@ void    x_(find_section_type)(char *c, t_sym_info symbol_info, t_sections sectio
 
     if (symbol_info.st_shndx >= SHN_LORESERVE || symbol_info.st_shndx >= sections.count)
         return;
-
     if (ft_strncmp(symbol_info.sh_name, ".debug", 6) == 0) {
         *c = 'N';
         return;
@@ -78,14 +77,11 @@ void    x_(find_section_type)(char *c, t_sym_info symbol_info, t_sections sectio
 void    x_(find_special_type)(char *c, t_sym_info symbol_info) {
     switch (symbol_info.st_shndx) {
         case SHN_UNDEF:
-            *c = 'U';
-            return;
+            *c = 'U'; return;
         case SHN_COMMON:
-            *c = 'C';
-            return;
+            *c = 'C'; return;
         case SHN_ABS:
-            *c = 'A';
-            return;
+            *c = 'A'; return;
     }
     if (symbol_info.st_bind == STB_GNU_UNIQUE)
         *c = 'u';
@@ -94,10 +90,7 @@ void    x_(find_special_type)(char *c, t_sym_info symbol_info) {
 }
 
 void    x_(resolve_visibility)(char *c, t_sym_info symbol_info) {
-    if (*c == '?')
-        return;
-
-    else if (symbol_info.st_bind == STB_WEAK && symbol_info.st_type != STT_GNU_IFUNC) {
+    if (symbol_info.st_bind == STB_WEAK && symbol_info.st_type != STT_GNU_IFUNC) {
         if (symbol_info.st_type == STT_OBJECT)
             *c = (symbol_info.st_shndx == SHN_UNDEF) ? 'v' : 'V';
         else
@@ -112,7 +105,8 @@ char    x_(get_type)(t_sym_info symbol_info, t_sections sections) {
 
     x_(find_section_type)(&c, symbol_info, sections);
     x_(find_special_type)(&c, symbol_info);
-    x_(resolve_visibility)(&c, symbol_info);
+    if (c != '?')
+        x_(resolve_visibility)(&c, symbol_info);
 
     return c;
 }
