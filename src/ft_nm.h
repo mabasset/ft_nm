@@ -1,19 +1,13 @@
 #ifndef     FT_NM_H
 # define    FT_NM_H
 
-# include <elf.h>
-# include <sys/stat.h>
-# include <sys/types.h>
-# include <fcntl.h>
-# include <stdio.h>
-# include <errno.h>
-# include <string.h>
-# include <sys/mman.h>
-# include <unistd.h>
-# include <stdlib.h>
-# include <stdint.h>
+# include "libmb.h"
 
-#include "libft.h"
+# include <elf.h>
+# include <errno.h>
+# include <fcntl.h>
+# include <sys/stat.h>
+# include <sys/mman.h>
 
 # ifdef X32
 #   define x_(func)     x32_##func

@@ -6,11 +6,11 @@ O_DIR_64 = $(O_DIR)/64
 O_DIR_32 = $(O_DIR)/32
 
 SRCS_LIST = main.c \
-			utils.c \
-			print.c \
-			endian.c \
-			process_elf.c \
-			symbol.c
+            utils.c \
+            print.c \
+            endian.c \
+            process_elf.c \
+            symbol.c
 
 SRCS = $(addprefix $(S_DIR)/,$(SRCS_LIST))
 
