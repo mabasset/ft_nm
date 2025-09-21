@@ -2,106 +2,108 @@
 
 t_flags g_flags = { 0 };
 
-int get_file_fd(char *file_path) {
-    int fd;
+// int get_file_fd(char *file_path) {
+//     int fd;
 
-    fd = open(file_path, O_RDONLY);
-    if (errno == ENOENT)
-        ft_dprintf(STDERR_FILENO, "nm: '%s': No such file\n", file_path);
-    return fd;
-}
+//     fd = open(file_path, O_RDONLY);
+//     if (errno == ENOENT)
+//         ft_dprintf(STDERR_FILENO, "nm: '%s': No such file\n", file_path);
+//     return fd;
+// }
 
-size_t   get_file_size(int fd, char *file_path) {
-    struct stat file_info;
+// size_t   get_file_size(int fd, char *file_path) {
+//     struct stat file_info;
 
-    if (fstat(fd, &file_info) < 0) {
-        ft_dprintf(STDERR_FILENO, "nm: '%s': %s\n", file_path, strerror(errno));
-        return 0;
-    }
-    if (S_ISDIR(file_info.st_mode)) {
-        ft_dprintf(STDERR_FILENO, "nm: Warning: '%s' is a directory\n", file_path);
-        return 0;
-    }
-    return file_info.st_size;
-}
+//     if (fstat(fd, &file_info) < 0) {
+//         ft_dprintf(STDERR_FILENO, "nm: '%s': %s\n", file_path, strerror(errno));
+//         return 0;
+//     }
+//     if (S_ISDIR(file_info.st_mode)) {
+//         ft_dprintf(STDERR_FILENO, "nm: Warning: '%s' is a directory\n", file_path);
+//         return 0;
+//     }
+//     return file_info.st_size;
+// }
 
-char    *get_file_content(int fd, size_t file_size) {
-    void    *map;
+// char    *get_file_content(int fd, size_t file_size) {
+//     void    *map;
 
-    map = mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (map == NULL || map == MAP_FAILED)
-        return NULL;
-    return (char *) map;
-}
+//     map = mmap(NULL, file_size, PROT_READ, MAP_PRIVATE, fd, 0);
+//     if (map == NULL || map == MAP_FAILED)
+//         return NULL;
+//     return (char *) map;
+// }
 
-int check_content(t_string mapped_file) {
-    char    *content = mapped_file.content;
-    size_t  size = mapped_file.size;
+// int check_content(t_string mapped_file) {
+//     char    *content = mapped_file.content;
+//     size_t  size = mapped_file.size;
 
-    if (size < sizeof(Elf32_Ehdr) ||
-        content[0] != 0x7f || content[1] != 'E' ||
-        content[2] != 'L' || content[3] != 'F') {
-        return 1;
-    }
-    if(content[EI_CLASS] != ELFCLASS32 && content[EI_CLASS] != ELFCLASS64)
-        return 1;
-    if (content[EI_CLASS] == ELFCLASS64 && size < sizeof(Elf64_Ehdr))
-        return 1;
-    if (content[EI_DATA] != ELFDATA2LSB && content[EI_DATA] != ELFDATA2MSB)
-        return 1;
-    if (content[EI_VERSION] != EV_CURRENT)
-        return 1;
-    return 0;
-}
+//     if (size < sizeof(Elf32_Ehdr) ||
+//         content[0] != 0x7f || content[1] != 'E' ||
+//         content[2] != 'L' || content[3] != 'F') {
+//         return 1;
+//     }
+//     if(content[EI_CLASS] != ELFCLASS32 && content[EI_CLASS] != ELFCLASS64)
+//         return 1;
+//     if (content[EI_CLASS] == ELFCLASS64 && size < sizeof(Elf64_Ehdr))
+//         return 1;
+//     if (content[EI_DATA] != ELFDATA2LSB && content[EI_DATA] != ELFDATA2MSB)
+//         return 1;
+//     if (content[EI_VERSION] != EV_CURRENT)
+//         return 1;
+//     return 0;
+// }
 
-int ft_nm(char *file_path) {
-    int         fd __attribute__ ((cleanup(close_fd)));
-    t_string    mapped_file __attribute__ ((cleanup(unmap_file))) = { 0 };
-    t_sym_info  **symbols_info;
+// int ft_nm(char *file_path) {
+//     int         fd __attribute__ ((cleanup(close_fd)));
+//     t_string    mapped_file __attribute__ ((cleanup(unmap_file))) = { 0 };
+//     t_sym_info  **symbols_info;
 
-    fd = get_file_fd(file_path);
-    if (fd < 0)
-        return 1;
-    mapped_file.size = get_file_size(fd, file_path);
-    if (mapped_file.size == 0)
-        return 1;
-    mapped_file.content = get_file_content(fd, mapped_file.size);
-    if (check_content(mapped_file)) {
-        ft_dprintf(STDERR_FILENO, "nm: %s: file format not recognized\n", file_path, strerror(errno));
-        return 1;
-    }
-    g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
+//     fd = get_file_fd(file_path);
+//     if (fd < 0)
+//         return 1;
+//     mapped_file.size = get_file_size(fd, file_path);
+//     if (mapped_file.size == 0)
+//         return 1;
+//     mapped_file.content = get_file_content(fd, mapped_file.size);
+//     if (check_content(mapped_file)) {
+//         ft_dprintf(STDERR_FILENO, "nm: %s: file format not recognized\n", file_path, strerror(errno));
+//         return 1;
+//     }
+//     g_flags.endian_match = define_endianess(mapped_file.content[EI_DATA]);
 
-    symbols_info = (mapped_file.content[EI_CLASS] == ELFCLASS32) ? 
-       x32_get_symbols_info(mapped_file) : x64_get_symbols_info(mapped_file);
-    if (symbols_info == NULL)
-        return 1;
-    if (symbols_info[0] == NULL) {
-        ft_dprintf(STDERR_FILENO, "nm: %s: no symbols\n", file_path);
-        return 0;
-    }
+//     symbols_info = (mapped_file.content[EI_CLASS] == ELFCLASS32) ? 
+//        x32_get_symbols_info(mapped_file) : x64_get_symbols_info(mapped_file);
+//     if (symbols_info == NULL)
+//         return 1;
+//     if (symbols_info[0] == NULL) {
+//         ft_dprintf(STDERR_FILENO, "nm: %s: no symbols\n", file_path);
+//         return 0;
+//     }
 
-    if (!g_flags.no_sort)
-        sort_symbols(symbols_info);
-    display_symbols(symbols_info, file_path, mapped_file.content[EI_CLASS]);
-    free_matrix(&symbols_info);
-    return 0;
-}
+//     if (!g_flags.no_sort)
+//         sort_symbols(symbols_info);
+//     display_symbols(symbols_info, file_path, mapped_file.content[EI_CLASS]);
+//     free_matrix(&symbols_info);
+//     return 0;
+// }
 
 char    *handle_long_flag(char *flag) {
     char    *long_flags[] = {"--debug-syms", "--extern-only", "--undefined-only", "--reverse-sort", "--no-sort"};
     char    *short_flags[] = {"-a", "-g", "-u", "-r", "-p"};
-    int     size = sizeof(long_flags) / sizeof(char *);
+    int     size;
     int     i;
 
+    size = sizeof(long_flags) / sizeof(char *);
     for (i = 0; i < size; i++)
         if (ft_strcmp(flag, long_flags[i]) == 0)
-            break;
+            break ;
     size = sizeof(short_flags) / sizeof(char *);
     if (i < size)
         return short_flags[i];
+    ft_putstr_err("nm: unrecognized option\n");
+    print_usage();
 
-    ft_dprintf(STDERR_FILENO, "nm: unrecognized option \'%s\'\n", flag);
     return NULL;
 }
 
@@ -128,51 +130,47 @@ int     set_flags(char *flags) {
             case 'p':
                 g_flags.no_sort = 1; break;
             default:
-                ft_dprintf(STDERR_FILENO, "nm: invalid option -- \'%c\'\n", flags[i]);
+                ft_putstr_err("nm: invalid option\n");
+                print_usage();
                 return 1;
         }
     }
     return 0;
 }
 
-char    **process_arguments(int argc, char *argv[]) {
-    char    **file_paths;
-    int     k = 0;
+t_list  *process_arguments(int argc, char *argv[]) {
+    t_list  *file_paths;
 
-    file_paths = malloc(sizeof(char *) * (argc + 1));
-    if (file_paths == NULL) {
-        ft_dprintf(STDERR_FILENO, "nm: %s\n", strerror(errno));
-        return NULL;
-    }
+    file_paths = NULL;
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] == '-' && argv[i][1] != '\0') {
             if (set_flags(argv[i])) {
-                print_usage();
-                free(file_paths);
+                // print_usage();
+                ft_list_clear(file_paths, NULL);
                 return NULL;
             }
             continue;
         }
-        file_paths[k] = argv[i];
-        k++;
+        ft_list_push_back(&file_paths, argv[i]);
     }
-    if (k == 0)
-        file_paths[k++] = "a.out";
-    file_paths[k] = NULL;
-    if (k > 1)
+    if (file_paths == NULL)
+        ft_list_push_back(&file_paths, "a.out");
+    if (ft_list_size(file_paths) > 1)
         g_flags.path = 1;
     return file_paths;
 }
 
 int main(int argc, char *argv[]) {
-    int     exit_status = 0;
-    char    **file_paths;
+    int     exit_status;
+    t_list  *file_paths;
 
     file_paths = process_arguments(argc, argv);
     if (file_paths == NULL)
         return 1;
-    for (int i = 0; file_paths[i] != NULL; i++)
-        exit_status = ft_nm(file_paths[i]) || exit_status;
-    free(file_paths);
+    exit_status = 0;
+    for (;file_paths != NULL; file_paths = file_paths->next)
+        ft_printf("%s\n", file_paths->data);
+        // exit_status = ft_nm(file_paths) || exit_status;
+    ft_list_clear(file_paths, NULL);
     return exit_status;
 }

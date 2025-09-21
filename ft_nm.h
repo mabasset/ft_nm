@@ -9,6 +9,8 @@
 # include <sys/stat.h>
 # include <sys/mman.h>
 
+# define USAGE_FILEPATH "usage.txt"
+
 # ifdef X32
 #   define x_(func)     x32_##func
     typedef Elf32_Ehdr  Elf_Ehdr;
@@ -38,6 +40,8 @@
 #   define ELF_ST_TYPE  ELF64_ST_TYPE
 #   define Elf_Addr_len 16
 # endif
+
+typedef struct stat t_stat;
 
 typedef struct {
     int     all;
