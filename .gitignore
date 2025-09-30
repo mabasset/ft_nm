@@ -1,6 +1,8 @@
-obj
-ft_nm
-libft/**/*.o
-libft/**/*.a
-nm_tester
-.vscode
+*
+!Makefile
+!*.h
+!*.c
+!*/
+!*.sh
+!*.pdf
+obj/

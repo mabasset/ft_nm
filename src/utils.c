@@ -1,65 +1,36 @@
 #include "ft_nm.h"
 
-extern t_flags  g_flags;
-
 void    close_fd(int *fd) {
     if (*fd > 0)
         close(*fd);
 }
 
-void    unmap_file(t_string *mapped_file) {
-    if (mapped_file->content != NULL)
-        munmap(mapped_file->content, mapped_file->size);
+void    unmap_file(t_string *file) {
+    if (file != NULL)
+        munmap(file->content, file->size);
 }
 
-void free_matrix(t_sym_info ***symbols_info) {
-    if (symbols_info == NULL || *symbols_info == NULL)
-        return;
-    for (int i = 0; (*symbols_info)[i] != NULL; i++) {
-        free((*symbols_info)[i]->value);
-        free((*symbols_info)[i]);
-    }
-    free(*symbols_info);
+int symcmp(void *sym1, void *sym2) {
+    return ft_strcmp(((t_sym*)sym1)->name, ((t_sym*)sym2)->name);
 }
 
-void    sort_symbols(t_sym_info **symbols_info) {
-    t_sym_info  temp;
-    int         diff;
+t_string    extract_content(char *file_path) {
+    int         fd __attribute__ ((cleanup(close_fd)));
+    t_stat      stat;
+    void        *map;
+    t_string    file = {0};
 
-    for (int i = 0; symbols_info[i] != NULL; i++) {
-        for (int j = 0; symbols_info[j] != NULL; j++) {
-            if (symbols_info[j + 1] == NULL)
-                break;
-            diff = ft_strcmp(symbols_info[j]->name, symbols_info[j + 1]->name);
-            if ((diff > 0 && !g_flags.reverse) || (diff < 0 && g_flags.reverse)) {
-                temp = *symbols_info[j + 1];
-                *symbols_info[j + 1] = *symbols_info[j];
-                *symbols_info[j] = temp;
-            }
-        }
+    fd = open(file_path, O_RDONLY);
+    if (fd < 0 || fstat(fd, &stat) < 0) {
+        ft_putstr_err("nm: '");
+        ft_putstr_err(file_path);
+        ft_putstr_err("': No such file\n");
+        return file;
     }
-}
-
-void    display_symbols(t_sym_info **symbols_info, char *file_path, int ei_class) {
-    static char *undefined_types = "Uwv";
-    static char *external_types = "ABCDGRSTUVvWwi";
-    t_sym_info  *symbol_info;
-    const char  *fmt;
-
-    fmt = (ei_class == ELFCLASS32) ? "%8s %c %s\n" : "%16s %c %s\n";
-
-    if (g_flags.path)
-        ft_printf("\n%s:\n", file_path);
-    for (size_t i = 0; symbols_info[i] != NULL; i++) {
-        symbol_info = symbols_info[i];
-        if (g_flags.undefined && !ft_strchr(undefined_types, symbol_info->type))
-            continue;
-        if (g_flags.external && !ft_strchr(external_types, symbol_info->type))
-            continue;
-        if (!g_flags.all && (symbol_info->st_type == STT_SECTION || symbol_info->st_type == STT_FILE))
-            continue;
-        if (symbol_info->type == '?')
-            continue;
-        ft_printf(fmt, symbol_info->value, symbol_info->type, symbol_info->name);
-    }
+    map = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (map == NULL || map == MAP_FAILED)
+        return file;
+    file.content = (char*) map;
+    file.size = stat.st_size;
+    return file;
 }

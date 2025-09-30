@@ -1,20 +1,69 @@
 #include "ft_nm.h"
 
-void    print_usage() {
-    int     fd;
-    t_stat  stat;
-    void    *map;
+extern t_flags  g_flags;
 
-    fd = open(USAGE_FILEPATH, O_RDONLY);
-    if (fd < 0 || fstat(fd, &stat) < 0) {
-        ft_putstr_err("Usage: unavailable");
+void    print_usage() {
+    t_string    file;
+
+    file = extract_content(USAGE_FILEPATH);
+    if (file.content == NULL)
         return ;
+    ft_putstr_err(file.content);
+    unmap_file(&file);
+}
+
+int print_format_error(char *file_path) {
+    ft_putstr_err("nm: ");
+    ft_putstr_err(file_path);
+    ft_putstr_err(": file format not recognized\n");
+    return 1;
+}
+
+static void print_sym_value(char *value, int ei_class) {
+    char    filler;
+    int     padding;
+
+    filler = ' ';
+    padding = (ei_class == ELFCLASS32) ? 8 : 16;
+    if (value != NULL) {
+        padding -= ft_strlen(value);
+        filler = 0;
     }
-    map = mmap(NULL, stat.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    if (map == NULL || map == MAP_FAILED) {
-        ft_putstr_err("Usage: unavailable");
-        return ;
+    for (int i = 0; i < padding; i++)
+        ft_putchar(filler);
+    if (value != NULL)
+        ft_putstr(value);
+}
+
+static void print_sym_type(char type) {
+    ft_putchar(' ');
+    ft_putchar(type);
+    ft_putchar(' ');
+}
+
+void    print_symbols(t_list *syms, char *file_path, int ei_class) {
+    static char *undefined_types = "Uwv";
+    static char *external_types = "ABCDGRSTUVvWwi";
+    t_sym       *sym;
+
+    if (g_flags.path) {
+        ft_putchar('\n');
+        ft_putstr(file_path);
+        ft_putstr(":\n");
     }
-    ft_putstr_err((char*) map);
-    munmap(map, stat.st_size);
+    for (;syms != NULL; syms = syms->next) {
+        sym = (t_sym*)syms->data;
+        if (g_flags.undefined && !ft_strchr(undefined_types, sym->type))
+            continue;
+        if (g_flags.external && !ft_strchr(external_types, sym->type))
+            continue;
+        if (!g_flags.all && (sym->st_type == STT_SECTION || sym->st_type == STT_FILE))
+            continue;
+        if (sym->type == '?')
+            continue;
+        
+        print_sym_value(sym->value, ei_class);
+        print_sym_type(sym->type);
+        ft_putstr_nl(sym->name);
+    }
 }
