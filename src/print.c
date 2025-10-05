@@ -2,14 +2,13 @@
 
 extern t_flags  g_flags;
 
-void    print_usage() {
+int print_usage() {
     t_string    file;
 
     file = extract_content(USAGE_FILEPATH);
-    if (file.content == NULL)
-        return ;
     ft_putstr_err(file.content);
     unmap_file(&file);
+    return 1;
 }
 
 int print_format_error(char *file_path) {
@@ -17,6 +16,27 @@ int print_format_error(char *file_path) {
     ft_putstr_err(file_path);
     ft_putstr_err(": file format not recognized\n");
     return 1;
+}
+
+int print_no_symbols(char *file_path) {
+    ft_putstr_err("nm: ");
+    ft_putstr_err(file_path);
+    ft_putstr_err(": no symbols\n");
+    return 0;
+}
+
+int print_invalid_option(char option) {
+    ft_putstr_err("nm: invalid option -- '");
+    ft_putchar_err(option);
+    ft_putstr_err("'\n");
+    return print_usage();
+}
+
+int print_unrecognized_option(char *option) {
+    ft_putstr_err("nm: unrecognized option '");
+    ft_putstr_err(option);
+    ft_putstr_err("'\n");
+    return print_usage();
 }
 
 static void print_sym_value(char *value, int ei_class) {

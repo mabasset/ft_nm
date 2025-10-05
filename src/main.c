@@ -23,7 +23,7 @@ int check_content(t_string mapped_file) {
 }
 
 static int ft_nm(char *file_path) {
-    t_string    file __attribute__ ((cleanup(unmap_file)));
+    t_string    file __attribute__((cleanup(unmap_file)));
     Elf_Ehdr    *header;
     t_elf_info  elf_info;
     int         elf_error;
@@ -41,107 +41,87 @@ static int ft_nm(char *file_path) {
         x32_set_elf_info(&elf_info, header, file) : x64_set_elf_info(&elf_info, header, file);
     if (elf_error)
         return print_format_error(file_path);
+
     symbols = (file.content[EI_CLASS] == ELFCLASS32) ? 
        x32_get_symbols(elf_info) : x64_get_symbols(elf_info);
-    if (symbols == NULL) {
-        ft_putstr_err("nm: ");
-        ft_putstr_err(file_path);
-        ft_putstr_err(": no symbols\n");
-        return 0;
-    }
+    if (symbols == NULL)
+        return print_no_symbols(file_path);
+
     if (!g_flags.no_sort)
         ft_list_sort(&symbols, symcmp);
     print_symbols(symbols, file_path, file.content[EI_CLASS]);
-    ft_list_clear(symbols, free);
+    ft_list_clear(symbols, free_sym);
+
     return 0;
 }
 
-static char *handle_long_flag(char *flag) {
-    char    *long_flags[] = {"--debug-syms", "--extern-only", "--undefined-only", "--reverse-sort", "--no-sort"};
-    char    *short_flags[] = {"-a", "-g", "-u", "-r", "-p"};
-    int     length;
-    int     size;
-    int     i;
+static int  set_flags(char *long_flag, t_btree *flag_map) {
+    const char  *short_flags;
 
-    length = ft_strlen(flag);
-    size = sizeof(long_flags) / sizeof(char *);
-    for (i = 0; i < size; i++)
-        if (ft_strncmp(flag, long_flags[i], length) == 0)
-            break ;
-    size = sizeof(short_flags) / sizeof(char *);
-    if (i < size)
-        return short_flags[i];
-    ft_putstr_err("nm: unrecognized option -- '");
-    ft_putstr_err(flag);
-    ft_putstr_err("'\n");
-    print_usage();
+    if (long_flag[0] != '-' || long_flag[1] == '\0')
+        return 0;
+    short_flags = long_flag + 1;
+    if (*short_flags == '-')
+        short_flags = map_get(flag_map, long_flag + 2, map_cmp_str);
+    if (short_flags == NULL)
+        return print_unrecognized_option(long_flag);
 
-    return NULL;
-}
-
-static int  set_flags(char *flags) {
-    char    *short_flag = NULL;
-
-    for (int i = 1; flags[i] != '\0'; i++) {
-        switch(flags[i]) {
-            case '-':
-                short_flag = handle_long_flag(flags);
-                if (short_flag == NULL)
-                    return 1;
-                flags = short_flag;
-                i = 0;
-                break;
-            case 'a':
-                g_flags.all = 1; break;
+    for (int i = 0; short_flags[i] != '\0'; i++) {
+        switch(short_flags[i]) {
             case 'g':
                 g_flags.external = 1; break;
-            case 'u':
-                g_flags.undefined = 1; break;
-            case 'r':
-                g_flags.reverse = 1; break;
             case 'p':
                 g_flags.no_sort = 1; break;
+            case 'r':
+                g_flags.reverse = 1; break;
+            case 'u':
+                g_flags.undefined = 1; break;
+            case 'a':
+                g_flags.all = 1; break;
             default:
-                ft_putstr_err("nm: invalid option\n");
-                ft_putchar_err(flags[i]);
-                ft_putstr_err("'\n");
-                print_usage();
-                return 1;
+                return print_invalid_option(short_flags[i]);
         }
     }
     return 0;
 }
 
-static t_list   *process_args(int argc, char *argv[]) {
-    t_list  *file_paths;
+int process_args(t_list **file_paths, int argc, char *argv[]) {
+    int     end_of_options;
+    t_btree *flag_map __attribute__((cleanup(clear_map)));
+    t_map   entries[] = {
+        {"debug-syms", "a"},
+        {"extern-only", "g"},
+        {"undefined-only", "u"},
+        {"reverse-sort", "r"},
+        {"no-sort", "p"}
+    };
 
-    file_paths = NULL;
+    end_of_options = 0;
+    flag_map = map_create_from_entries(entries, sizeof(entries) / sizeof(t_map), map_cmp_entry_str);
     for (int i = 1; i < argc; i++) {
-        if (argv[i][0] == '-' && argv[i][1] != '\0') {
-            if (set_flags(argv[i]) == 0)
-                continue ;
-            ft_list_clear(file_paths, NULL);
-            return NULL;
-        }
-        ft_list_push_back(&file_paths, argv[i]);
+        if (!end_of_options && ft_strcmp(argv[i], "--") == 0)
+            end_of_options = 1;
+        else if (!end_of_options && set_flags(argv[i], flag_map))
+            return 1;
+        else
+            ft_list_push_back(file_paths, argv[i]);
     }
-    if (file_paths == NULL)
-        ft_list_push_back(&file_paths, "a.out");
-    if (ft_list_size(file_paths) > 1)
+    if (*file_paths == NULL)
+        ft_list_push_back(file_paths, "a.out");
+    if (ft_list_size(*file_paths) > 1)
         g_flags.path = 1;
-    return file_paths;
+    return 0;
 }
 
 int main(int argc, char *argv[]) {
     int     exit_status;
-    t_list  *file_paths;
+    t_list  *file_paths __attribute__((cleanup(clear_list)));
 
-    file_paths = process_args(argc, argv);
-    if (file_paths == NULL)
+    file_paths = NULL;
+    if (process_args(&file_paths, argc, argv))
         return 1;
     exit_status = 0;
-    for (;file_paths != NULL; file_paths = file_paths->next)
-        exit_status = ft_nm((char*)file_paths->data) || exit_status;
-    ft_list_clear(file_paths, NULL);
+    for (t_list *curr = file_paths; curr != NULL; curr = curr->next)
+        exit_status = ft_nm((char*)curr->data) || exit_status;
     return exit_status;
 }

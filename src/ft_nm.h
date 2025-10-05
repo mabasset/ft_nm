@@ -1,7 +1,7 @@
 #ifndef     FT_NM_H
 # define    FT_NM_H
 
-# include "libmb/libmb.h"
+# include "../libmb/libmb.h"
 
 # include <elf.h>
 # include <errno.h>
@@ -101,15 +101,22 @@ uint64_t    bswap_64(uint64_t val);
 )
 # define resolve_endianess(X) (!g_flags.endian_match ? bswap(X) : (X))
 
-// utils.c
-void        close_fd(int *fd);
-void        unmap_file(t_string *mapped_file);
+// compare.c
 int         symcmp(void *sym1, void *sym2);
 t_string    extract_content(char *file_path);
 
 // print.c
-void    print_usage();
 int     print_format_error(char *file_path);
+int     print_no_symbols(char *file_path);
+int     print_invalid_option(char option);
+int     print_unrecognized_option(char *option);
 void    print_symbols(t_list *syms, char *file_path, int ei_class);
+
+// clear.c
+void        close_fd(int *fd);
+void        unmap_file(t_string *mapped_file);
+void        clear_map(t_btree **map);
+void        clear_list(t_list **list);
+void        free_sym(void *ptr);
 
 #endif /* FT_NM_H */
