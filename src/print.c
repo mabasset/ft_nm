@@ -6,8 +6,10 @@ int print_usage() {
     t_string    file;
 
     file = extract_content(USAGE_FILEPATH);
-    ft_putstr_err(file.content);
-    unmap_file(&file);
+    if (file.content != NULL) {
+        ft_putstr_err(file.content);
+        unmap_file(&file);
+    }
     return 1;
 }
 

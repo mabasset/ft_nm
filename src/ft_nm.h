@@ -103,7 +103,7 @@ uint64_t    bswap_64(uint64_t val);
 
 // compare.c
 int         symcmp(void *sym1, void *sym2);
-t_string    extract_content(char *file_path);
+int         symcmp_rev(void *sym1, void *sym2);
 
 // print.c
 int     print_format_error(char *file_path);
@@ -118,5 +118,8 @@ void        unmap_file(t_string *mapped_file);
 void        clear_map(t_btree **map);
 void        clear_list(t_list **list);
 void        free_sym(void *ptr);
+
+// extractor.c
+t_string    extract_content(char *file_path);
 
 #endif /* FT_NM_H */

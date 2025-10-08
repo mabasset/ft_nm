@@ -5,10 +5,10 @@ ARG UID=1000
 ARG GID=1000
 
 RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y build-essential \
-        gcc-multilib \
+    apt-get install -y \
+        build-essential \
+        make \
         valgrind \
-        sudo \
         git \
         vim
 
@@ -18,8 +18,6 @@ RUN groupadd -g ${GID} ${NAME} && \
     echo "${NAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 USER    ${NAME}
-WORKDIR /app/ft_nm
-
-COPY --chown=${UID}:${GID} . .
+WORKDIR /home/${NAME}/ft_nm
 
 CMD ["sleep", "infinity"]

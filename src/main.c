@@ -25,7 +25,7 @@ int check_content(t_string mapped_file) {
 static int ft_nm(char *file_path) {
     t_string    file __attribute__((cleanup(unmap_file)));
     Elf_Ehdr    *header;
-    t_elf_info  elf_info;
+    t_elf_info  elf_info = {0};
     int         elf_error;
     t_list      *symbols;
 
@@ -47,8 +47,12 @@ static int ft_nm(char *file_path) {
     if (symbols == NULL)
         return print_no_symbols(file_path);
 
-    if (!g_flags.no_sort)
-        ft_list_sort(&symbols, symcmp);
+    if (!g_flags.no_sort) {
+        if (g_flags.reverse)
+            ft_list_sort(&symbols, symcmp_rev);
+        else
+            ft_list_sort(&symbols, symcmp);
+    }
     print_symbols(symbols, file_path, file.content[EI_CLASS]);
     ft_list_clear(symbols, free_sym);
 
@@ -58,8 +62,6 @@ static int ft_nm(char *file_path) {
 static int  set_flags(char *long_flag, t_btree *flag_map) {
     const char  *short_flags;
 
-    if (long_flag[0] != '-' || long_flag[1] == '\0')
-        return 0;
     short_flags = long_flag + 1;
     if (*short_flags == '-')
         short_flags = map_get(flag_map, long_flag + 2, map_cmp_str);
@@ -89,11 +91,11 @@ int process_args(t_list **file_paths, int argc, char *argv[]) {
     int     end_of_options;
     t_btree *flag_map __attribute__((cleanup(clear_map)));
     t_map   entries[] = {
+        {"no-sort", "p"},
         {"debug-syms", "a"},
         {"extern-only", "g"},
         {"undefined-only", "u"},
-        {"reverse-sort", "r"},
-        {"no-sort", "p"}
+        {"reverse-sort", "r"}
     };
 
     end_of_options = 0;
@@ -101,8 +103,10 @@ int process_args(t_list **file_paths, int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         if (!end_of_options && ft_strcmp(argv[i], "--") == 0)
             end_of_options = 1;
-        else if (!end_of_options && set_flags(argv[i], flag_map))
-            return 1;
+        else if (!end_of_options && (argv[i][0] == '-' && argv[i][1] != '\0')) {
+            if (set_flags(argv[i], flag_map))
+                return 1;
+        }
         else
             ft_list_push_back(file_paths, argv[i]);
     }

@@ -73,7 +73,7 @@ int x_(set_elf_info)(t_elf_info *elf_info, Elf_Ehdr *ehdr, t_string file) {
 
     symtabhdr = x_(find_symtabhdr)(elf_info->shdrs, elf_info->shcount);
     if (symtabhdr == NULL || symtabhdr->sh_entsize == 0)
-        return 1;
+        return 0;
     elf_info->symtabs = (Elf_Sym *) x_(get_shcontent)(symtabhdr, file);
     if (elf_info->symtabs == NULL)
         return 1;
