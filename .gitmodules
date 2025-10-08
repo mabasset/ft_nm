@@ -1,6 +1,0 @@
-[submodule "libmb"]
-	path = libmb
-	url = https://github.com/mabasset/libmb.git
-[submodule "tester"]
-	path = tester
-	url = https://github.com/jemercie/nm_tester.git
