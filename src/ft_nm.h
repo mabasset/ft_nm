@@ -119,7 +119,4 @@ void        clear_map(t_btree **map);
 void        clear_list(t_list **list);
 void        free_sym(void *ptr);
 
-// extractor.c
-t_string    extract_content(char *file_path);
-
 #endif /* FT_NM_H */

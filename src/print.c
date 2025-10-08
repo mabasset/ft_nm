@@ -3,13 +3,58 @@
 extern t_flags  g_flags;
 
 int print_usage() {
-    t_string    file;
 
-    file = extract_content(USAGE_FILEPATH);
-    if (file.content != NULL) {
-        ft_putstr_err(file.content);
-        unmap_file(&file);
-    }
+    char *usage =
+        "Usage: nm [option(s)] [file(s)]\n"
+        " List symbols in [file(s)] (a.out by default).\n"
+        " The options are:\n"
+        "  -a, --debug-syms       Display debugger-only symbols\n"
+        "  -A, --print-file-name  Print name of the input file before every symbol\n"
+        "  -B                     Same as --format=bsd\n"
+        "  -C, --demangle[=STYLE] Decode mangled/processed symbol names\n"
+        "                           STYLE can be \"none\", \"auto\", \"gnu-v3\", \"java\",\n"
+        "                           \"gnat\", \"dlang\", \"rust\"\n"
+        "      --no-demangle      Do not demangle low-level symbol names\n"
+        "      --recurse-limit    Enable a demangling recursion limit.  (default)\n"
+        "      --no-recurse-limit Disable a demangling recursion limit.\n"
+        "  -D, --dynamic          Display dynamic symbols instead of normal symbols\n"
+        "  -e                     (ignored)\n"
+        "  -f, --format=FORMAT    Use the output format FORMAT.  FORMAT can be `bsd',\n"
+        "                           `sysv', `posix' or 'just-symbols'.\n"
+        "                           The default is `bsd'\n"
+        "  -g, --extern-only      Display only external symbols\n"
+        "    --ifunc-chars=CHARS  Characters to use when displaying ifunc symbols\n"
+        "  -j, --just-symbols     Same as --format=just-symbols\n"
+        "  -l, --line-numbers     Use debugging information to find a filename and\n"
+        "                           line number for each symbol\n"
+        "  -n, --numeric-sort     Sort symbols numerically by address\n"
+        "  -o                     Same as -A\n"
+        "  -p, --no-sort          Do not sort the symbols\n"
+        "  -P, --portability      Same as --format=posix\n"
+        "  -r, --reverse-sort     Reverse the sense of the sort\n"
+        "      --plugin NAME      Load the specified plugin\n"
+        "  -S, --print-size       Print size of defined symbols\n"
+        "  -s, --print-armap      Include index for symbols from archive members\n"
+        "      --quiet            Suppress \"no symbols\" diagnostic\n"
+        "      --size-sort        Sort symbols by size\n"
+        "      --special-syms     Include special symbols in the output\n"
+        "      --synthetic        Display synthetic symbols as well\n"
+        "  -t, --radix=RADIX      Use RADIX for printing symbol values\n"
+        "      --target=BFDNAME   Specify the target object format as BFDNAME\n"
+        "  -u, --undefined-only   Display only undefined symbols\n"
+        "  -U, --defined-only     Display only defined symbols\n"
+        "      --unicode={default|show|invalid|hex|escape|highlight}\n"
+        "                         Specify how to treat UTF-8 encoded unicode characters\n"
+        "  -W, --no-weak          Ignore weak symbols\n"
+        "      --with-symbol-versions  Display version strings after symbol names\n"
+        "  -X 32_64               (ignored)\n"
+        "  @FILE                  Read options from FILE\n"
+        "  -h, --help             Display this information\n"
+        "  -V, --version          Display this program's version number\n"
+        "nm: supported targets: elf64-x86-64 elf32-i386 elf32-iamcu elf32-x86-64 pei-i386 pe-x86-64 pei-x86-64 elf64-little elf64-big elf32-little elf32-big pe-bigobj-x86-64 pe-i386 pdb srec symbolsrec verilog tekhex binary ihex plugin\n";
+
+    ft_putstr_err(usage);
+
     return 1;
 }
 
